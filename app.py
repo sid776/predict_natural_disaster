@@ -9,6 +9,12 @@ import datetime
 import math
 import random
 from datetime import datetime, timedelta
+import json
+import numpy as np
+import traceback
+import pandas as pd
+import plotly.express as px
+import plotly.utils
 
 # Load environment variables
 load_dotenv()
@@ -727,6 +733,152 @@ def predict_flood():
         import traceback
         traceback.print_exc()  # Print the full traceback for debugging
         return jsonify({'error': 'An error occurred while processing your request'}), 500
+
+# Add new routes for global disaster monitoring
+@app.route('/api/global-disasters')
+def get_global_disasters():
+    try:
+        # NASA EONET API for natural disasters
+        eonet_url = "https://eonet.gsfc.nasa.gov/api/v3/events"
+        eonet_params = {
+            'days': 7,  # Last 7 days
+            'status': 'open',
+            'category': 'natural'
+        }
+        eonet_response = requests.get(eonet_url, params=eonet_params)
+        eonet_data = eonet_response.json()
+
+        # USGS Earthquake API
+        usgs_url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
+        usgs_params = {
+            'format': 'geojson',
+            'starttime': (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'),
+            'minmagnitude': 4.5  # Significant earthquakes
+        }
+        usgs_response = requests.get(usgs_url, params=usgs_params)
+        usgs_data = usgs_response.json()
+
+        # Process and combine the data
+        disasters = []
+        
+        # Process EONET events
+        for event in eonet_data.get('events', []):
+            disasters.append({
+                'type': event.get('categories', [{}])[0].get('title', 'Unknown'),
+                'title': event.get('title', 'Unknown Event'),
+                'date': event.get('geometry', [{}])[0].get('date', ''),
+                'coordinates': {
+                    'lat': event.get('geometry', [{}])[0].get('coordinates', [0, 0])[1],
+                    'lon': event.get('geometry', [{}])[0].get('coordinates', [0, 0])[0]
+                },
+                'source': 'NASA EONET'
+            })
+
+        # Process USGS earthquakes
+        for feature in usgs_data.get('features', []):
+            properties = feature.get('properties', {})
+            geometry = feature.get('geometry', {}).get('coordinates', [0, 0, 0])
+            disasters.append({
+                'type': 'Earthquake',
+                'title': f"Earthquake M{properties.get('mag', 'Unknown')}",
+                'date': datetime.fromtimestamp(properties.get('time', 0)/1000).isoformat(),
+                'coordinates': {
+                    'lat': geometry[1],
+                    'lon': geometry[0]
+                },
+                'magnitude': properties.get('mag'),
+                'source': 'USGS'
+            })
+
+        return jsonify({
+            'success': True,
+            'disasters': disasters
+        })
+
+    except Exception as e:
+        print(f"Error fetching global disasters: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch global disaster data'
+        })
+
+@app.route('/api/disaster-statistics')
+def get_disaster_statistics():
+    try:
+        # Get disaster data
+        disasters_response = get_global_disasters()
+        disasters_data = json.loads(disasters_response.get_data())
+        
+        if not disasters_data.get('success'):
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch disaster data'
+            })
+
+        disasters = disasters_data.get('disasters', [])
+        
+        # Convert to DataFrame for easier analysis
+        df = pd.DataFrame(disasters)
+        
+        # Calculate statistics
+        disaster_types = df['type'].value_counts().to_dict()
+        
+        # Create time series data
+        df['date'] = pd.to_datetime(df['date'])
+        daily_counts = df.groupby(df['date'].dt.date).size().to_dict()
+        
+        # Create geographic distribution
+        geographic_distribution = df.groupby(['coordinates.lat', 'coordinates.lon']).size().reset_index(name='count')
+        
+        # Create visualizations
+        # 1. Disaster Type Distribution
+        type_fig = px.pie(
+            values=list(disaster_types.values()),
+            names=list(disaster_types.keys()),
+            title='Distribution of Disaster Types'
+        )
+        
+        # 2. Daily Disaster Count
+        time_fig = px.line(
+            x=list(daily_counts.keys()),
+            y=list(daily_counts.values()),
+            title='Daily Disaster Count',
+            labels={'x': 'Date', 'y': 'Number of Disasters'}
+        )
+        
+        # 3. Geographic Distribution
+        geo_fig = px.scatter_mapbox(
+            geographic_distribution,
+            lat='coordinates.lat',
+            lon='coordinates.lon',
+            size='count',
+            title='Geographic Distribution of Disasters',
+            zoom=1,
+            mapbox_style='carto-darkmatter'
+        )
+        
+        return jsonify({
+            'success': True,
+            'statistics': {
+                'total_disasters': len(disasters),
+                'disaster_types': disaster_types,
+                'daily_counts': daily_counts,
+                'visualizations': {
+                    'type_distribution': json.loads(type_fig.to_json()),
+                    'time_series': json.loads(time_fig.to_json()),
+                    'geographic': json.loads(geo_fig.to_json())
+                }
+            }
+        })
+
+    except Exception as e:
+        print(f"Error generating disaster statistics: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate disaster statistics'
+        })
 
 if __name__ == '__main__':
     app.run(debug=True) 
