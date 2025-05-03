@@ -20,6 +20,9 @@ import plotly.utils
 load_dotenv()
 
 app = Flask(__name__)
+app.config['FREEZER_RELATIVE_URLS'] = True
+app.config['FREEZER_DESTINATION'] = 'build'
+
 predictor = QuantumTornadoPredictor()
 
 # Initialize geocoder
@@ -879,6 +882,28 @@ def get_disaster_statistics():
             'success': False,
             'error': 'Failed to generate disaster statistics'
         })
+
+@app.route('/static_predictions')
+def static_predictions():
+    """Static page with example predictions for GitHub Pages"""
+    example_predictions = [
+        {
+            'location': 'Oklahoma City, OK',
+            'disaster_type': 'tornado',
+            'probability': 0.75
+        },
+        {
+            'location': 'San Francisco, CA',
+            'disaster_type': 'earthquake',
+            'probability': 0.65
+        },
+        {
+            'location': 'Miami, FL',
+            'disaster_type': 'flood',
+            'probability': 0.82
+        }
+    ]
+    return render_template('static_predictions.html', predictions=example_predictions)
 
 if __name__ == '__main__':
     app.run(debug=True) 

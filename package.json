@@ -1,0 +1,13 @@
+{
+  "name": "quantum-disaster-prediction",
+  "version": "1.0.0",
+  "description": "Quantum Natural Disaster Prediction System",
+  "scripts": {
+    "build": "echo 'Build completed'",
+    "deploy": "gh-pages -d docs",
+    "predeploy": "npm run build"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  }
+} 
