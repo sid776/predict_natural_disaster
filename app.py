@@ -25,7 +25,7 @@ load_dotenv()
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app.server  # This is the Flask server instance
+server = app.server  # Expose the Flask server for Gunicorn
 
 predictor = QuantumTornadoPredictor()
 geolocator = Nominatim(user_agent="tornado_predictor")
