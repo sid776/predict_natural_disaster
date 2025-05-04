@@ -19,4 +19,5 @@ urllib3==2.0.4
 plotly==5.18.0
 dash==2.14.2
 dash-bootstrap-components==1.5.0
-Frozen-Flask==0.18 
+Frozen-Flask==0.18
+gunicorn 
