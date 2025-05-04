@@ -1,0 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+body, .dash-table-container, .tab-content, .tab-btn, .tab--1, .tab--2, .tab--3, .tab--4, .tab--5 {
+  font-family: 'Poppins', sans-serif !important;
+} 

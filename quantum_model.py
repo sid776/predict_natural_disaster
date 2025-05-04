@@ -1,3 +1,4 @@
+import pennylane as qml
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import traceback
@@ -5,9 +6,50 @@ from qiskit import QuantumCircuit
 
 class QuantumTornadoPredictor:
     def __init__(self):
+        self.dev = qml.device("default.qubit", wires=4)
+        self.circuit = qml.QNode(self.quantum_circuit, self.dev)
         self.scaler = MinMaxScaler()
         self.n_qubits = 5  # Number of qubits for our quantum circuit
         
+    def quantum_circuit(self, features):
+        # Encode the weather features into quantum states
+        for i, feature in enumerate(features):
+            qml.RY(feature, wires=i)
+            
+        # Create entanglement
+        for i in range(3):
+            qml.CNOT(wires=[i, i+1])
+            
+        # Measure in computational basis
+        return [qml.expval(qml.PauliZ(i)) for i in range(4)]
+    
+    def predict(self, weather_data):
+        try:
+            # Extract and normalize weather features
+            temp = weather_data['main']['temp'] - 273.15  # Convert to Celsius
+            humidity = weather_data['main']['humidity']
+            pressure = weather_data['main']['pressure']
+            wind_speed = weather_data['wind']['speed']
+            
+            # Normalize features to [0, 2π]
+            features = [
+                (temp + 20) / 60 * 2 * np.pi,  # Temperature range: -20 to 40 C
+                humidity / 100 * 2 * np.pi,     # Humidity range: 0 to 100%
+                (pressure - 950) / 100 * 2 * np.pi,  # Pressure range: 950 to 1050 hPa
+                wind_speed / 30 * 2 * np.pi     # Wind speed range: 0 to 30 m/s
+            ]
+            
+            # Get quantum predictions
+            predictions = self.circuit(np.array(features))
+            
+            # Convert predictions to probability [0, 1]
+            probability = (np.mean(predictions) + 1) / 2
+            
+            return probability
+        except Exception as e:
+            print(f"Error in predict: {str(e)}")
+            return 0.5  # Return default probability on error
+
     def _normalize_features(self, features):
         try:
             print("Starting feature normalization...")
@@ -37,56 +79,6 @@ class QuantumTornadoPredictor:
             print(traceback.format_exc())
             # Return default values if normalization fails
             return np.array([0.5, 0.5, 0.5, 0.5, 0.5])
-
-    def predict(self, features):
-        try:
-            print("Starting prediction with features:", features)
-            
-            # Check if all required features are present
-            required_features = ['temperature', 'humidity', 'pressure', 'wind_speed', 'wind_deg']
-            for feature in required_features:
-                if feature not in features:
-                    print(f"Missing required feature: {feature}")
-                    # Provide default value for missing feature
-                    features[feature] = 0
-            
-            # Normalize input features
-            print("Normalizing features...")
-            normalized_features = self._normalize_features(features)
-            print("Normalized features:", normalized_features)
-            
-            # Simple quantum-inspired calculation
-            # This is a simplified approach that doesn't actually run a quantum circuit
-            # but uses quantum-inspired principles
-            
-            # Calculate a weighted sum of the normalized features
-            weights = np.array([0.3, 0.2, 0.2, 0.2, 0.1])  # Weights for each feature
-            print("Using weights:", weights)
-            
-            weighted_sum = np.sum(normalized_features * weights)
-            print("Weighted sum:", weighted_sum)
-            
-            # Scale to a probability between 0 and 100
-            probability = weighted_sum * 100
-            print("Initial probability:", probability)
-            
-            # Add some randomness to simulate quantum uncertainty
-            random_factor = np.random.normal(0, 5)
-            print("Random factor:", random_factor)
-            
-            probability = probability + random_factor
-            print("Probability after random factor:", probability)
-            
-            # Ensure the probability is between 0 and 100
-            probability = max(0, min(100, probability))
-            print("Final probability:", probability)
-            
-            return probability
-        except Exception as e:
-            print(f"Error in predict: {str(e)}")
-            print(traceback.format_exc())
-            # Return a default value instead of raising an exception
-            return 50.0  # Default to 50% probability
 
     def _create_quantum_circuit(self, normalized_features):
         try:

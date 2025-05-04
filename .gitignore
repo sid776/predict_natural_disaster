@@ -42,4 +42,21 @@ results/
 
 # Test files
 test_model.py
-t_model.py 
+t_model.py
+
+# Standard Python, Node, and OS ignores
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+.env.*
+*.pyo
+*.pyd
+*.swp
+*.bak
+*.tmp
+.idea/
+.vscode/
+results/ 
