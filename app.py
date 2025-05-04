@@ -19,6 +19,12 @@ import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 from quantum_visualization import create_quantum_circuit_visualization
 import dash
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from qiskit import QuantumCircuit, Aer, execute
+from qiskit.visualization import plot_histogram
+import pennylane as qml
+from sklearn.preprocessing import MinMaxScaler
 
 # Load environment variables
 load_dotenv()
@@ -26,6 +32,9 @@ load_dotenv()
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server  # Expose the Flask server for Gunicorn
+
+# Enable CORS for the Flask server
+CORS(server)
 
 predictor = QuantumTornadoPredictor()
 geolocator = Nominatim(user_agent="tornado_predictor")
