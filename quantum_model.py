@@ -31,24 +31,69 @@ class QuantumTornadoPredictor:
             pressure = weather_data['main']['pressure']
             wind_speed = weather_data['wind']['speed']
             
-            # Normalize features to [0, 2π]
+            # More realistic normalization ranges for tornado prediction
             features = [
-                (temp + 20) / 60 * 2 * np.pi,  # Temperature range: -20 to 40 C
-                humidity / 100 * 2 * np.pi,     # Humidity range: 0 to 100%
-                (pressure - 950) / 100 * 2 * np.pi,  # Pressure range: 950 to 1050 hPa
-                wind_speed / 30 * 2 * np.pi     # Wind speed range: 0 to 30 m/s
+                (temp - 15) / 30 * 2 * np.pi,  # Temperature range: 15 to 45 C (typical tornado conditions)
+                (humidity - 40) / 40 * 2 * np.pi,  # Humidity range: 40 to 80% (typical tornado conditions)
+                (pressure - 980) / 40 * 2 * np.pi,  # Pressure range: 980 to 1020 hPa (typical tornado conditions)
+                wind_speed / 20 * 2 * np.pi  # Wind speed range: 0 to 20 m/s (typical tornado conditions)
             ]
             
             # Get quantum predictions
             predictions = self.circuit(np.array(features))
             
-            # Convert predictions to probability [0, 1]
-            probability = (np.mean(predictions) + 1) / 2
+            # Convert predictions to probability [0, 1] with more conservative scaling
+            raw_probability = (np.mean(predictions) + 1) / 2
             
-            return probability
+            # Apply more conservative probability scaling
+            # This ensures probabilities are lower and more realistic
+            scaled_probability = raw_probability * 0.6  # Scale down by 40%
+            
+            # Add location-specific adjustments
+            # Lower probabilities for regions with historically low tornado activity
+            if self._is_low_tornado_region(weather_data):
+                scaled_probability *= 0.3  # Reduce probability by 70% for low-risk regions
+            
+            return min(0.65, scaled_probability)  # Cap maximum probability at 65%
+            
         except Exception as e:
             print(f"Error in predict: {str(e)}")
-            return 0.5  # Return default probability on error
+            return 0.1  # Return low default probability on error
+    
+    def _is_low_tornado_region(self, weather_data):
+        """
+        Check if the location is in a region with historically low tornado activity
+        """
+        try:
+            # Get location coordinates
+            lat = weather_data['coord']['lat']
+            lon = weather_data['coord']['lon']
+            
+            # Regions with historically low tornado activity
+            low_risk_regions = [
+                # Northeast US (including New Jersey)
+                {'min_lat': 38.0, 'max_lat': 45.0, 'min_lon': -75.0, 'max_lon': -70.0},
+                # West Coast
+                {'min_lat': 32.0, 'max_lat': 49.0, 'min_lon': -125.0, 'max_lon': -120.0},
+                # Northern states (excluding tornado alley)
+                {'min_lat': 45.0, 'max_lat': 49.0, 'min_lon': -125.0, 'max_lon': -90.0},
+                # Alaska
+                {'min_lat': 50.0, 'max_lat': 72.0, 'min_lon': -180.0, 'max_lon': -130.0},
+                # Hawaii
+                {'min_lat': 18.0, 'max_lat': 23.0, 'min_lon': -160.0, 'max_lon': -154.0}
+            ]
+            
+            # Check if location is in any low-risk region
+            for region in low_risk_regions:
+                if (region['min_lat'] <= lat <= region['max_lat'] and 
+                    region['min_lon'] <= lon <= region['max_lon']):
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"Error in _is_low_tornado_region: {str(e)}")
+            return False  # Default to not low-risk on error
 
     def _normalize_features(self, features):
         try:

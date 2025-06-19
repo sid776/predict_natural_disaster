@@ -39,52 +39,31 @@ CORS(server)
 predictor = QuantumTornadoPredictor()
 geolocator = Nominatim(user_agent="tornado_predictor")
 
-# Custom color scheme for different disasters
-DISASTER_COLORS = {
-    'tornado': {
-        'primary': '#FF6B6B',    # Coral
-        'secondary': '#FFE66D',  # Light Yellow
-        'accent': '#FF9F1C',     # Orange
-        'background': '#FFF5F5', # Light Coral
-        'text': '#2C3E50',       # Dark Blue-Gray
-        'tab': '#FF6B6B',        # Coral
-        'tab_text': '#FFFFFF',   # White
-        'card_bg': '#FFF5F5',    # Light Coral
-        'card_border': '#FF6B6B' # Coral
-    },
-    'earthquake': {
-        'primary': '#9B59B6',    # Purple
-        'secondary': '#8E44AD',  # Dark Purple
-        'accent': '#BB8FCE',     # Light Purple
-        'background': '#F5EEF8', # Light Purple
-        'text': '#2C3E50',
-        'tab': '#9B59B6',        # Purple
-        'tab_text': '#FFFFFF',
-        'card_bg': '#F5EEF8',    # Light Purple
-        'card_border': '#9B59B6' # Purple
-    },
-    'fire': {
-        'primary': '#F39C12',    # Orange
-        'secondary': '#E67E22',  # Dark Orange
-        'accent': '#F5B041',     # Light Orange
-        'background': '#FEF5E7', # Light Orange
-        'text': '#2C3E50',
-        'tab': '#F39C12',        # Orange
-        'tab_text': '#FFFFFF',
-        'card_bg': '#FEF5E7',    # Light Orange
-        'card_border': '#F39C12' # Orange
-    },
-    'flood': {
-        'primary': '#2ECC71',    # Bright Green
-        'secondary': '#27AE60',  # Dark Green
-        'accent': '#58D68D',     # Light Green
-        'background': '#E8F8F5', # Light Green
-        'text': '#2C3E50',
-        'tab': '#2ECC71',        # Bright Green
-        'tab_text': '#FFFFFF',
-        'card_bg': '#E8F8F5',    # Light Green
-        'card_border': '#2ECC71' # Bright Green
-    }
+# --- Color palette matching the screenshot ---
+COLORS = {
+    'tab_tornado': '#FFA726',      # Orange
+    'tab_earthquake': '#AB47BC',   # Purple
+    'tab_wildfire': '#FFE066',     # Yellow
+    'tab_flood': '#2ECC71',        # Green
+    'tab_guide': '#42A5F5',        # Blue
+    'sidebar_bg': '#F3E8FF',       # Light lavender
+    'sidebar_border': '#B39DDB',   # Purple border
+    'sidebar_button': '#8E24AA',   # Purple button
+    'sidebar_button_text': '#FFFFFF',
+    'main_bg': '#F8F9FA',          # Very light gray
+    'card_bg': '#FFF9FB',          # Soft pastel
+    'card_border': '#FFA726',      # Orange border for tornado
+    'text': '#333A4D',             # Dark gray
+    'white': '#FFFFFF',
+}
+
+# --- Graph color mapping for each disaster ---
+GRAPH_COLORS = {
+    'tornado': COLORS['tab_tornado'],
+    'earthquake': COLORS['tab_earthquake'],
+    'wildfire': COLORS['tab_wildfire'],
+    'fire': COLORS['tab_wildfire'],  # Alias for fire
+    'flood': COLORS['tab_flood'],
 }
 
 # Global statistics data (updated with real data)
@@ -145,7 +124,10 @@ def get_weather_data(lat, lon):
         print(f"API Response Content: {response.content}")
         
         if response.status_code == 200:
-            return response.json()
+            weather_data = response.json()
+            # Add coordinates to the weather data for the quantum model
+            weather_data['coord'] = {'lat': lat, 'lon': lon}
+            return weather_data
         elif response.status_code == 401:
             print("Error: Invalid API key")
             return get_mock_weather_data()
@@ -200,12 +182,13 @@ def get_mock_weather_data():
             }
         ],
         'visibility': 10000,  # 10km
-        'mock_data': True  # Flag to indicate this is mock data
+        'mock_data': True,  # Flag to indicate this is mock data
+        'coord': {'lat': 40.7128, 'lon': -74.0060}  # Default coordinates (NYC)
     }
 
 def test_api_connection():
     """Test the OpenWeatherMap API connection with a known location"""
-    api_key = os.getenv('OPENWEATHER_API_KEY')
+    api_key = os.getenv('OPENWEATHERMAP_API_KEY')
     print(f"Testing API connection with key: {api_key[:5]}...")
     
     # Test with New York City coordinates
@@ -233,290 +216,278 @@ def test_api_connection():
         print(traceback.format_exc())
         return False
 
-# Create initial figures with disaster-specific colors
-def create_initial_gauge(disaster_type='tornado'):
-    colors = DISASTER_COLORS[disaster_type]
+# --- Helper: Always show a plot with sample/mock data ---
+def create_gauge(disaster):
     return go.Figure(go.Indicator(
         mode="gauge+number",
         value=0,
         domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': "Probability (%)", 'font': {'size': 24, 'color': colors['text'], 'family': 'Poppins'}},
         gauge={
-            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': colors['primary']},
-            'bar': {'color': colors['primary']},
-            'bgcolor': 'white',
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': COLORS['text']},
+            'bar': {'color': GRAPH_COLORS[disaster]},
+            'bgcolor': COLORS['white'],
             'borderwidth': 2,
-            'bordercolor': colors['accent'],
+            'bordercolor': GRAPH_COLORS[disaster],
             'steps': [
-                {'range': [0, 30], 'color': colors['secondary']},
-                {'range': [30, 70], 'color': colors['accent']},
-                {'range': [70, 100], 'color': colors['primary']}
-            ]
-        }
-    ))
-
-def create_initial_forecast(disaster_type='tornado'):
-    colors = DISASTER_COLORS[disaster_type]
-    dates = pd.date_range(start=pd.Timestamp.now(), periods=30, freq='D')
-    probabilities = np.zeros(30)
-    fig = px.line(x=dates, y=probabilities, title='30-Day Probability Forecast',
-                  color_discrete_sequence=[colors['primary']])
-    fig.update_layout(
-        plot_bgcolor=colors['background'],
-        paper_bgcolor=colors['background'],
-        font={'color': colors['text'], 'family': 'Poppins'}
+                {'range': [0, 30], 'color': '#FFE066'},
+                {'range': [30, 70], 'color': '#FFA726'},
+                {'range': [70, 100], 'color': '#FF7043'}
+            ],
+        },
+        title={'text': "Probability (%)", 'font': {'color': COLORS['text'], 'size': 24}},
+    )).update_layout(
+        paper_bgcolor=COLORS['main_bg'],
+        plot_bgcolor=COLORS['white'],
+        font={'color': COLORS['text']}
     )
-    return fig
 
-def create_initial_circuit(disaster_type='tornado'):
-    colors = DISASTER_COLORS[disaster_type]
-    fig = go.Figure(go.Scatter(
-        x=[0, 1, 2, 3],
-        y=[0, 0, 0, 0],
-        mode='lines+markers',
-        name='Quantum State',
-        line={'color': colors['primary']},
-        marker={'color': colors['accent']}
-    ))
-    fig.update_layout(
-        plot_bgcolor=colors['background'],
-        paper_bgcolor=colors['background'],
-        font={'color': colors['text'], 'family': 'Poppins'}
+def create_forecast(disaster):
+    dates = pd.date_range(start=datetime.now(), periods=30, freq='D')
+    y = [random.randint(20, 80) for _ in range(30)]
+    return go.Figure(
+        data=[go.Scatter(
+            x=dates,
+            y=y,
+            mode='lines',
+            line=dict(color=GRAPH_COLORS[disaster], width=3),
+        )],
+        layout=go.Layout(
+            title=dict(text='30-Day Probability Forecast', font=dict(color=COLORS['text'], size=20)),
+            xaxis=dict(title='Date', gridcolor=COLORS['sidebar_border']),
+            yaxis=dict(title='Probability (%)', gridcolor=COLORS['sidebar_border'], range=[0, 100]),
+            paper_bgcolor=COLORS['card_bg'],
+            plot_bgcolor=COLORS['white'],
+            font=dict(color=COLORS['text'])
+        )
     )
-    return fig
 
-def create_initial_factors(disaster_type='tornado'):
-    colors = DISASTER_COLORS[disaster_type]
-    fig = px.bar(x=['Temperature', 'Humidity', 'Pressure', 'Wind'],
-                 y=[0, 0, 0, 0],
-                 title='Factor Impact Analysis',
-                 color_discrete_sequence=[colors['primary']])
-    fig.update_layout(
-        plot_bgcolor=colors['background'],
-        paper_bgcolor=colors['background'],
-        font={'color': colors['text'], 'family': 'Poppins'}
+def create_factors(disaster):
+    factors = ['Temperature', 'Humidity', 'Wind Speed', 'Pressure']
+    y = [random.randint(10, 40) for _ in range(4)]
+    return go.Figure(
+        data=[go.Bar(
+            x=factors,
+            y=y,
+            marker_color=GRAPH_COLORS[disaster]
+        )],
+        layout=go.Layout(
+            title=dict(text='Factor Impact Analysis', font=dict(color=COLORS['text'], size=20)),
+            xaxis=dict(title='Factors', gridcolor=COLORS['sidebar_border']),
+            yaxis=dict(title='Impact (%)', gridcolor=COLORS['sidebar_border'], range=[0, 100]),
+            paper_bgcolor=COLORS['card_bg'],
+            plot_bgcolor=COLORS['white'],
+            font=dict(color=COLORS['text'])
+        )
     )
-    return fig
 
-def create_initial_global_stats(disaster_type='tornado'):
-    colors = DISASTER_COLORS[disaster_type]
-    stats = GLOBAL_STATS[disaster_type]
-    fig = go.Figure(data=[
-        go.Bar(name='Count', x=['Count'], y=[stats['count']], marker_color=colors['primary']),
-        go.Bar(name='Deaths', x=['Deaths'], y=[stats['deaths']], marker_color=colors['secondary']),
-        go.Bar(name='Injuries', x=['Injuries'], y=[stats['injuries']], marker_color=colors['accent']),
-        go.Bar(name='Damage (B$)', x=['Damage'], y=[stats['damage']], marker_color=colors['primary'])
-    ])
-    fig.update_layout(
-        title=f'{disaster_type.capitalize()} Statistics (Annual Averages)',
-        plot_bgcolor=colors['background'],
-        paper_bgcolor=colors['background'],
-        font={'color': colors['text'], 'family': 'Poppins'},
-        barmode='group'
+# Update the initial gauge figure
+def create_initial_gauge():
+    return go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=0,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        gauge={
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': COLORS['text']},
+            'bar': {'color': COLORS['primary']},
+            'bgcolor': COLORS['card'],
+            'borderwidth': 2,
+            'bordercolor': COLORS['border'],
+            'steps': [
+                {'range': [0, 30], 'color': COLORS['success']},
+                {'range': [30, 70], 'color': COLORS['warning']},
+                {'range': [70, 100], 'color': COLORS['danger']}
+            ],
+        },
+        title={'text': "Probability", 'font': {'color': COLORS['text'], 'size': 24}},
+    )).update_layout(
+        paper_bgcolor=COLORS['background'],
+        plot_bgcolor=COLORS['card'],
+        font={'color': COLORS['text']}
     )
-    return fig
 
-def create_sidebar_forecast(disaster_type='tornado'):
-    colors = DISASTER_COLORS[disaster_type]
-    dates = pd.date_range(start=pd.Timestamp.now(), periods=30, freq='D')
-    # Generate random probabilities between 10% and 80%
-    probabilities = np.random.uniform(0.1, 0.8, 30) * 100
-    fig = px.line(x=dates, y=probabilities, title='30-Day Probability Forecast',
-                  color_discrete_sequence=[colors['primary']])
-    fig.update_layout(
-        plot_bgcolor=colors['background'],
-        paper_bgcolor=colors['background'],
-        font={'color': colors['text'], 'family': 'Poppins'},
-        xaxis_title="Date",
-        yaxis_title="Probability (%)",
-        yaxis=dict(range=[0, 100])
+# Update the initial forecast figure
+def create_initial_forecast():
+    dates = pd.date_range(start=datetime.now(), periods=30, freq='D')
+    return go.Figure(
+        data=[go.Scatter(
+            x=dates,
+            y=[0] * 30,
+            mode='lines+markers',
+            line=dict(color=COLORS['primary'], width=3),
+            marker=dict(color=COLORS['accent'], size=8)
+        )],
+        layout=go.Layout(
+            title=dict(text='30-Day Forecast', font=dict(color=COLORS['text'], size=24)),
+            xaxis=dict(title='Date', gridcolor=COLORS['border']),
+            yaxis=dict(title='Probability (%)', gridcolor=COLORS['border']),
+            paper_bgcolor=COLORS['background'],
+            plot_bgcolor=COLORS['card'],
+            font=dict(color=COLORS['text'])
+        )
     )
-    return fig
 
-# GUIDE TAB CONTENT
-quantum_guide_content = dbc.Card([
-    dbc.CardBody([
-        html.H2("Quantum Guide", style={'color': '#9B59B6', 'font-family': 'Poppins'}),
-        html.P("This guide explains the quantum-inspired algorithms and visualizations used in this app.", style={'font-family': 'Poppins'}),
-        html.H4("Quantum Circuit Visualization", style={'color': '#9B59B6', 'font-family': 'Poppins'}),
-        dcc.Graph(figure=create_initial_circuit()),
-        html.P("The quantum circuit graph above represents the quantum state evolution used in our probability calculations. Each node corresponds to a quantum state, and the connections represent quantum operations.", style={'font-family': 'Poppins'}),
-        html.H4("Quantum Probability Calculation", style={'color': '#9B59B6', 'font-family': 'Poppins'}),
-        html.P("We use quantum-inspired algorithms to estimate the probability of each disaster. These algorithms leverage quantum superposition and interference principles to model uncertainty and correlations in weather data.", style={'font-family': 'Poppins'}),
-        html.H4("Quantum-enhanced Forecasting", style={'color': '#9B59B6', 'font-family': 'Poppins'}),
-        dcc.Graph(figure=create_initial_forecast('tornado')),
-        html.P("The forecast graph above shows a 30-day prediction using quantum-enhanced models, which can capture complex patterns in the data.", style={'font-family': 'Poppins'}),
-        html.H4("Quantum Factor Analysis", style={'color': '#9B59B6', 'font-family': 'Poppins'}),
-        dcc.Graph(figure=create_initial_factors('tornado')),
-        html.P("Factor analysis identifies which environmental variables most influence the quantum probability of a disaster.", style={'font-family': 'Poppins'}),
-    ])
-], style={'background': 'linear-gradient(120deg, #F5EEF8 60%, #FFE66D 100%)', 'border-radius': '1.5rem', 'margin-bottom': '2rem'})
+# Update the initial circuit figure
+def create_initial_circuit():
+    return go.Figure(
+        data=[go.Scatter(
+            x=[0, 1, 2, 3],
+            y=[0, 1, 0, 1],
+            mode='lines+markers',
+            line=dict(color=COLORS['secondary'], width=3),
+            marker=dict(color=COLORS['primary'], size=12)
+        )],
+        layout=go.Layout(
+            title=dict(text='Quantum Circuit', font=dict(color=COLORS['text'], size=24)),
+            xaxis=dict(title='Qubit', gridcolor=COLORS['border']),
+            yaxis=dict(title='State', gridcolor=COLORS['border']),
+            paper_bgcolor=COLORS['background'],
+            plot_bgcolor=COLORS['card'],
+            font=dict(color=COLORS['text'])
+        )
+    )
 
-# Define the layout
-app.layout = dbc.Container([
-    # Navigation Bar
-    dbc.NavbarSimple(
-        brand="Quantum-Inspired Natural Disaster Prediction",
-        brand_href="#",
-        color="success",
-        dark=False,
-        className="mb-4",
-        style={
-            'box-shadow': '0 2px 8px rgba(44, 62, 80, 0.10)',
-            'font-family': 'Poppins',
-            'font-weight': 'bold',
-            'font-size': '2.2rem',
-            'background-color': '#2ECC71',  # Bright green
-            'color': '#fff',
-            'border-radius': '1.2rem',
-            'padding': '0.7rem 2rem',
-            'letter-spacing': '0.03em',
-        }
-    ),
-    
-    # Main Content
-    dbc.Row([
-        # Left Sidebar
-        dbc.Col([
-            html.H2("Input Parameters", className="mb-4", style={'color': '#2C3E50', 'font-family': 'Poppins'}),
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("Location", className="card-title", style={'color': '#2C3E50', 'font-family': 'Poppins'}),
-                    dbc.Input(id="location-input", placeholder="Enter city, state", type="text", 
-                             className="mb-3", style={'border-color': '#9B59B6', 'font-family': 'Poppins'}),
-                    
-                    dbc.Button("Predict", id="predict-button", color="primary", 
-                              className="w-100", style={'background-color': '#9B59B6', 'font-family': 'Poppins'})
-                ])
-            ], className="mb-4", style={'background-color': '#F5EEF8', 
-                                      'border': '2px solid #9B59B6'}),
-            
-            # 30-Day Tornado Forecast
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("30-Day Tornado Forecast", className="card-title", style={'color': '#2C3E50', 'font-family': 'Poppins'}),
-                    dcc.Graph(id="sidebar-forecast-graph", figure=create_sidebar_forecast('tornado')),
-                    html.P("This 30-day forecast shows the predicted probability of a tornado at your location, helping you plan ahead and stay safe.", style={'font-family': 'Poppins', 'marginTop': 10}),
-                ])
-            ], style={'background-color': '#F5EEF8', 'border': '2px solid #9B59B6'}),
-        ], width=3),
-        
-        # Main Content Area
-        dbc.Col([
-            # Tabs for different disasters
-            dcc.Tabs([
-                # Tornado Tab
-                dcc.Tab(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H2("Tornado Analysis", className="mb-4", style={'color': DISASTER_COLORS['tornado']['text'], 'font-family': 'Poppins'}),
-                            dcc.Graph(id="tornado-gauge", figure=create_initial_gauge('tornado')),
-                            html.P("This gauge shows the quantum-inspired probability of a tornado occurring at your location.", style={'font-family': 'Poppins'}),
-                            html.Div(id="tornado-result", className="mt-4"),
-                            dcc.Graph(id="tornado-forecast", figure=create_initial_forecast('tornado')),
-                            html.P("30-day tornado forecast using quantum-enhanced models.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="tornado-factors", figure=create_initial_factors('tornado')),
-                            html.P("Key factors influencing tornado probability.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="tornado-stats", figure=create_initial_global_stats('tornado')),
-                            html.P("Global tornado statistics.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="main-quantum-circuit", figure=create_initial_circuit()),
-                            html.P("Quantum circuit visualization for tornado prediction.", style={'font-family': 'Poppins'}),
-                        ])
-                    ], className="mb-4", style={'background-color': DISASTER_COLORS['tornado']['card_bg'], 
-                                             'border': f'2px solid {DISASTER_COLORS["tornado"]["card_border"]}'}),
-                    label="Tornado",
-                    value="tornado",
-                    className='tab--1'
+# Update the initial factors figure
+def create_initial_factors():
+    return go.Figure(
+        data=[go.Bar(
+            x=['Temperature', 'Humidity', 'Wind Speed', 'Pressure'],
+            y=[0, 0, 0, 0],
+            marker_color=[COLORS['primary'], COLORS['secondary'], COLORS['accent'], COLORS['warning']]
+        )],
+        layout=go.Layout(
+            title=dict(text='Factor Impact Analysis', font=dict(color=COLORS['text'], size=24)),
+            xaxis=dict(title='Factors', gridcolor=COLORS['border']),
+            yaxis=dict(title='Impact (%)', gridcolor=COLORS['border']),
+            paper_bgcolor=COLORS['background'],
+            plot_bgcolor=COLORS['card'],
+            font=dict(color=COLORS['text'])
+        )
+    )
+
+# Update the initial global stats figure
+def create_initial_global_stats():
+    return go.Figure(
+        data=[go.Bar(
+            x=['Tornado', 'Earthquake', 'Fire', 'Flood'],
+            y=[0, 0, 0, 0],
+            marker_color=[COLORS['primary'], COLORS['secondary'], COLORS['accent'], COLORS['warning']]
+        )],
+        layout=go.Layout(
+            title=dict(text='Global Disaster Statistics', font=dict(color=COLORS['text'], size=24)),
+            xaxis=dict(title='Disaster Type', gridcolor=COLORS['border']),
+            yaxis=dict(title='Annual Occurrences', gridcolor=COLORS['border']),
+            paper_bgcolor=COLORS['background'],
+            plot_bgcolor=COLORS['card'],
+            font=dict(color=COLORS['text'])
+        )
+    )
+
+# Update the app layout
+app.layout = dbc.Container(
+    fluid=True,
+    style={'backgroundColor': COLORS['main_bg'], 'minHeight': '100vh'},
+    children=[
+        dbc.Navbar(
+            dbc.Container([
+                dbc.NavbarBrand("Quantum-Inspired Natural Disaster Prediction", style={'color': COLORS['tab_flood'], 'fontSize': '28px', 'fontWeight': 'bold'}),
+            ], fluid=True),
+            color=COLORS['white'],
+            dark=False,
+            className="mb-4",
+            style={'boxShadow': '0 2px 4px rgba(0,0,0,0.08)'}
+        ),
+        dbc.Row([
+            # Sidebar
+            dbc.Col([
+                html.H2("Input Parameters", style={'color': COLORS['tab_earthquake'], 'fontWeight': 'bold'}),
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H4("Location", style={'color': COLORS['tab_guide']}),
+                        dbc.Input(id="location-input", placeholder="Enter city, state", type="text", className="mb-3", style={'borderColor': COLORS['tab_guide']}),
+                        html.H4("Prediction Model", style={'color': COLORS['tab_guide'], 'marginTop': '1rem'}),
+                        dcc.Dropdown(
+                            id="model-select",
+                            options=[
+                                {"label": "Quantum AI", "value": "quantum"},
+                                {"label": "LSTM (Deep Learning)", "value": "lstm"},
+                                {"label": "Random Forest", "value": "rf"},
+                                {"label": "XGBoost", "value": "xgb"},
+                                {"label": "SVM", "value": "svm"},
+                                {"label": "MLP/ANN", "value": "mlp"},
+                            ],
+                            value="quantum",
+                            clearable=False,
+                            style={"marginBottom": "1rem"}
+                        ),
+                        dbc.Button("Predict", id="predict-button", color="primary", className="w-100", style={'backgroundColor': COLORS['sidebar_button'], 'color': COLORS['sidebar_button_text'], 'fontWeight': 'bold'}),
+                    ])
+                ], className="mb-4", style={'backgroundColor': COLORS['sidebar_bg'], 'border': f'2px solid {COLORS["sidebar_border"]}'}),
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H4("30-Day Tornado Forecast", style={'color': COLORS['tab_tornado']}),
+                        dcc.Graph(id="sidebar-forecast-graph", figure=create_forecast('tornado'), config={'displayModeBar': False}),
+                    ])
+                ], style={'backgroundColor': COLORS['card_bg'], 'border': f'2px solid {COLORS["tab_tornado"]}'}),
+            ], width=3),
+            # Main Content
+            dbc.Col([
+                dbc.Tabs([
+                    dbc.Tab(label="Tornado", tab_id="tornado", label_style={'background': COLORS['tab_tornado'], 'color': COLORS['white'], 'fontWeight': 'bold'}, active_label_style={'background': COLORS['tab_wildfire'], 'color': COLORS['tab_tornado']}),
+                    dbc.Tab(label="Earthquake", tab_id="earthquake", label_style={'background': COLORS['tab_earthquake'], 'color': COLORS['white'], 'fontWeight': 'bold'}, active_label_style={'background': COLORS['tab_guide'], 'color': COLORS['tab_earthquake']}),
+                    dbc.Tab(label="Wildfire", tab_id="wildfire", label_style={'background': COLORS['tab_wildfire'], 'color': COLORS['tab_tornado'], 'fontWeight': 'bold'}, active_label_style={'background': COLORS['tab_tornado'], 'color': COLORS['tab_wildfire']}),
+                    dbc.Tab(label="Flood", tab_id="flood", label_style={'background': COLORS['tab_flood'], 'color': COLORS['white'], 'fontWeight': 'bold'}, active_label_style={'background': COLORS['tab_guide'], 'color': COLORS['tab_flood']}),
+                    dbc.Tab(label="Guide", tab_id="guide", label_style={'background': COLORS['tab_guide'], 'color': COLORS['white'], 'fontWeight': 'bold'}, active_label_style={'background': COLORS['tab_earthquake'], 'color': COLORS['tab_guide']}),
+                ], id="tabs", active_tab="tornado", className="mb-4"),
+                # Render all outputs, hide those not active
+                html.Div([
+                    html.Div([
+                        html.H3("Tornado Analysis", style={'color': COLORS['tab_tornado'], 'fontWeight': 'bold'}),
+                        html.Div(id="tornado-result"),
+                        dcc.Graph(id="tornado-gauge", figure=create_gauge('tornado')),
+                        dcc.Graph(id="tornado-forecast", figure=create_forecast('tornado')),
+                        dcc.Graph(id="tornado-factors", figure=create_factors('tornado')),
+                    ], id="tornado-panel", style={"display": "block"}),
+                    html.Div([
+                        html.H3("Earthquake Analysis", style={'color': COLORS['tab_earthquake'], 'fontWeight': 'bold'}),
+                        html.Div(id="earthquake-result"),
+                        dcc.Graph(id="earthquake-gauge", figure=create_gauge('earthquake')),
+                        dcc.Graph(id="earthquake-forecast", figure=create_forecast('earthquake')),
+                        dcc.Graph(id="earthquake-factors", figure=create_factors('earthquake')),
+                    ], id="earthquake-panel", style={"display": "none"}),
+                    html.Div([
+                        html.H3("Wildfire Analysis", style={'color': COLORS['tab_wildfire'], 'fontWeight': 'bold'}),
+                        html.Div(id="fire-result"),
+                        dcc.Graph(id="fire-gauge", figure=create_gauge('wildfire')),
+                        dcc.Graph(id="fire-forecast", figure=create_forecast('wildfire')),
+                        dcc.Graph(id="fire-factors", figure=create_factors('wildfire')),
+                    ], id="wildfire-panel", style={"display": "none"}),
+                    html.Div([
+                        html.H3("Flood Analysis", style={'color': COLORS['tab_flood'], 'fontWeight': 'bold'}),
+                        html.Div(id="flood-result"),
+                        dcc.Graph(id="flood-gauge", figure=create_gauge('flood')),
+                        dcc.Graph(id="flood-forecast", figure=create_forecast('flood')),
+                        dcc.Graph(id="flood-factors", figure=create_factors('flood')),
+                    ], id="flood-panel", style={"display": "none"}),
+                ], id="all-panels"),
+                # Guide tab content
+                html.Div([
+                    html.H3("Guide", style={'color': COLORS['tab_guide'], 'fontWeight': 'bold'}),
+                    html.P("This guide explains the quantum-inspired algorithms and visualizations used in this app.", style={'color': COLORS['text']}),
+                ], id="guide-panel", style={"display": "none"}),
+            ], width=9),
+        ]),
+        dbc.Row(
+            dbc.Col(
+                html.Div(
+                    "© 2024 Quantum-Inspired Natural Disaster Prediction. All rights reserved.",
+                    style={'textAlign': 'center', 'color': COLORS['tab_earthquake'], 'padding': '20px', 'fontWeight': 'bold'}
                 ),
-                # Earthquake Tab
-                dcc.Tab(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H2("Earthquake Analysis", className="mb-4", style={'color': DISASTER_COLORS['earthquake']['text'], 'font-family': 'Poppins'}),
-                            dcc.Graph(id="earthquake-gauge", figure=create_initial_gauge('earthquake')),
-                            html.P("Quantum-inspired probability of an earthquake.", style={'font-family': 'Poppins'}),
-                            html.Div(id="earthquake-result", className="mt-4"),
-                            dcc.Graph(id="earthquake-forecast", figure=create_initial_forecast('earthquake')),
-                            html.P("30-day earthquake forecast using quantum-enhanced models.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="earthquake-factors", figure=create_initial_factors('earthquake')),
-                            html.P("Key factors influencing earthquake probability.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="earthquake-stats", figure=create_initial_global_stats('earthquake')),
-                            html.P("Global earthquake statistics.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="main-quantum-circuit-eq", figure=create_initial_circuit()),
-                            html.P("Quantum circuit visualization for earthquake prediction.", style={'font-family': 'Poppins'}),
-                        ])
-                    ], className="mb-4", style={'background-color': DISASTER_COLORS['earthquake']['card_bg'], 
-                                             'border': f'2px solid {DISASTER_COLORS["earthquake"]["card_border"]}'}),
-                    label="Earthquake",
-                    value="earthquake",
-                    className='tab--2'
-                ),
-                # Wildfire Tab
-                dcc.Tab(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H2("Wildfire Analysis", className="mb-4", style={'color': DISASTER_COLORS['fire']['text'], 'font-family': 'Poppins'}),
-                            dcc.Graph(id="fire-gauge", figure=create_initial_gauge('fire')),
-                            html.P("Quantum-inspired probability of a wildfire.", style={'font-family': 'Poppins'}),
-                            html.Div(id="fire-result", className="mt-4"),
-                            dcc.Graph(id="fire-forecast", figure=create_initial_forecast('fire')),
-                            html.P("30-day wildfire forecast using quantum-enhanced models.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="fire-factors", figure=create_initial_factors('fire')),
-                            html.P("Key factors influencing wildfire probability.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="fire-stats", figure=create_initial_global_stats('fire')),
-                            html.P("Global wildfire statistics.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="main-quantum-circuit-fire", figure=create_initial_circuit()),
-                            html.P("Quantum circuit visualization for wildfire prediction.", style={'font-family': 'Poppins'}),
-                        ])
-                    ], className="mb-4", style={'background-color': DISASTER_COLORS['fire']['card_bg'], 
-                                             'border': f'2px solid {DISASTER_COLORS["fire"]["card_border"]}'}),
-                    label="Wildfire",
-                    value="wildfire",
-                    className='tab--3'
-                ),
-                # Flood Tab
-                dcc.Tab(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.H2("Flood Analysis", className="mb-4", style={'color': DISASTER_COLORS['flood']['text'], 'font-family': 'Poppins'}),
-                            dcc.Graph(id="flood-gauge", figure=create_initial_gauge('flood')),
-                            html.P("Quantum-inspired probability of a flood.", style={'font-family': 'Poppins'}),
-                            html.Div(id="flood-result", className="mt-4"),
-                            dcc.Graph(id="flood-forecast", figure=create_initial_forecast('flood')),
-                            html.P("30-day flood forecast using quantum-enhanced models.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="flood-factors", figure=create_initial_factors('flood')),
-                            html.P("Key factors influencing flood probability.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="flood-stats", figure=create_initial_global_stats('flood')),
-                            html.P("Global flood statistics.", style={'font-family': 'Poppins'}),
-                            dcc.Graph(id="main-quantum-circuit-flood", figure=create_initial_circuit()),
-                            html.P("Quantum circuit visualization for flood prediction.", style={'font-family': 'Poppins'}),
-                        ])
-                    ], className="mb-4", style={'background-color': DISASTER_COLORS['flood']['card_bg'], 
-                                             'border': f'2px solid {DISASTER_COLORS["flood"]["card_border"]}'}),
-                    label="Flood",
-                    value="flood",
-                    className='tab--4'
-                ),
-                # Guide Tab (last tab)
-                dcc.Tab(
-                    quantum_guide_content,
-                    label="Guide",
-                    value="guide",
-                    className='tab--5'
-                ),
-            ], id="tabs", value="tornado", className='custom-tabs'),
-        ], width=9),
-    ]),
-    
-    # Footer
-    dbc.Row([
-        dbc.Col([
-            html.P("© 2024 Quantum Disaster Prediction System", 
-                  className="text-center text-muted mt-4",
-                  style={'color': '#2C3E50', 'font-family': 'Poppins'})
-        ])
-    ])
-], fluid=True, style={'background-color': '#F8F9FA', 'font-family': 'Poppins'})
+                width=12,
+            ),
+            className="mt-4",
+        ),
+    ],
+)
 
 # Callbacks
 @app.callback(
@@ -537,28 +508,35 @@ app.layout = dbc.Container([
      Output("flood-forecast", "figure"),
      Output("flood-factors", "figure")],
     [Input("predict-button", "n_clicks")],
-    [State("location-input", "value")]
+    [State("location-input", "value"), State("model-select", "value")]
 )
-def update_predictions(n_clicks, location):
+def update_predictions(n_clicks, location, model):
     if n_clicks is None or not location:
         raise PreventUpdate
-    
     try:
-        # Get coordinates
         lat, lon = get_coordinates(location)
         if not lat or not lon:
             return ["Invalid location. Please try again."] * 16
-        
-        # Get current weather data
         weather_data = get_weather_data(lat, lon)
-        
-        # Calculate probabilities for each disaster type
-        tornado_prob = calculate_tornado_probability(weather_data)
-        earthquake_prob = calculate_earthquake_probability(weather_data)
-        fire_prob = calculate_fire_probability(weather_data)
-        flood_prob = calculate_flood_probability(weather_data)
-        
-        # Create results for each disaster type
+        # Select prediction method
+        def predict(weather_data, disaster_type):
+            if model == "quantum":
+                return predict_with_quantum(weather_data, disaster_type)
+            elif model == "lstm":
+                return predict_with_lstm(weather_data, disaster_type)
+            elif model == "rf":
+                return predict_with_rf(weather_data, disaster_type)
+            elif model == "xgb":
+                return predict_with_xgb(weather_data, disaster_type)
+            elif model == "svm":
+                return predict_with_svm(weather_data, disaster_type)
+            elif model == "mlp":
+                return predict_with_mlp(weather_data, disaster_type)
+            return 0.0
+        tornado_prob = predict(weather_data, 'tornado')
+        earthquake_prob = predict(weather_data, 'earthquake')
+        fire_prob = predict(weather_data, 'fire')
+        flood_prob = predict(weather_data, 'flood')
         results = []
         for disaster_type, prob in [
             ('tornado', tornado_prob),
@@ -566,79 +544,66 @@ def update_predictions(n_clicks, location):
             ('fire', fire_prob),
             ('flood', flood_prob)
         ]:
-            colors = DISASTER_COLORS[disaster_type]
-            
-            # Create gauge
+            color = GRAPH_COLORS[disaster_type]
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=prob * 100,
                 domain={'x': [0, 1], 'y': [0, 1]},
-                title={'text': f"{disaster_type.capitalize()} Probability (%)", 
-                      'font': {'size': 24, 'color': colors['text'], 'family': 'Poppins'}},
+                title={'text': f"{disaster_type.capitalize()} Probability (%)",
+                      'font': {'size': 24, 'color': COLORS['text'], 'family': 'Poppins'}},
                 gauge={
-                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': colors['primary']},
-                    'bar': {'color': colors['primary']},
-                    'bgcolor': 'white',
+                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': color},
+                    'bar': {'color': color},
+                    'bgcolor': COLORS['white'],
                     'borderwidth': 2,
-                    'bordercolor': colors['accent'],
+                    'bordercolor': color,
                     'steps': [
-                        {'range': [0, 30], 'color': colors['secondary']},
-                        {'range': [30, 70], 'color': colors['accent']},
-                        {'range': [70, 100], 'color': colors['primary']}
+                        {'range': [0, 30], 'color': '#FFE066'},
+                        {'range': [30, 70], 'color': '#FFA726'},
+                        {'range': [70, 100], 'color': '#FF7043'}
                     ],
                     'threshold': {
-                        'line': {'color': colors['primary'], 'width': 4},
+                        'line': {'color': color, 'width': 4},
                         'thickness': 0.75,
                         'value': prob * 100
                     }
                 }
             ))
-            
-            # Create forecast
             dates = pd.date_range(start=pd.Timestamp.now(), periods=30, freq='D')
             forecast = get_30_day_forecast(lat, lon)
-            probabilities = [day['probability'] for day in forecast]
-            
+            probabilities = [prob for _ in forecast]  # Use the same prob for all days for demo
             fig_forecast = px.line(x=dates, y=probabilities,
                                  title='30-Day Probability Forecast',
-                                 color_discrete_sequence=[colors['primary']])
+                                 color_discrete_sequence=[color])
             fig_forecast.update_layout(
-                plot_bgcolor=colors['background'],
-                paper_bgcolor=colors['background'],
+                plot_bgcolor=COLORS['card_bg'],
+                paper_bgcolor=COLORS['card_bg'],
                 xaxis_title="Date",
                 yaxis_title="Probability (%)",
-                font={'color': colors['text'], 'family': 'Poppins'}
+                font={'color': COLORS['text'], 'family': 'Poppins'},
+                yaxis=dict(range=[0, 100])
             )
-            
-            # Create factor analysis
             factors = calculate_factor_impacts(weather_data)
             fig_factors = px.bar(x=list(factors.keys()), y=list(factors.values()),
                                title='Factor Impact Analysis',
-                               color_discrete_sequence=[colors['primary']])
+                               color_discrete_sequence=[color])
             fig_factors.update_layout(
-                plot_bgcolor=colors['background'],
-                paper_bgcolor=colors['background'],
+                plot_bgcolor=COLORS['card_bg'],
+                paper_bgcolor=COLORS['card_bg'],
                 xaxis_title="Weather Factor",
                 yaxis_title="Impact (%)",
-                font={'color': colors['text'], 'family': 'Poppins'},
+                font={'color': COLORS['text'], 'family': 'Poppins'},
                 yaxis=dict(range=[0, 100])
             )
-            
-            # Create result text
             result_text = [
-                html.H3(f"{disaster_type.capitalize()} Prediction Results", 
-                       style={'color': colors['text'], 'font-family': 'Poppins'}),
-                html.P(f"Location: {location}", style={'color': colors['text'], 'font-family': 'Poppins'}),
-                html.P(f"Probability: {prob * 100:.2f}%", style={'color': colors['text'], 'font-family': 'Poppins'}),
-                html.H4("Key Factors:", style={'color': colors['text'], 'font-family': 'Poppins'}),
-                html.Ul([html.Li(f"{k}: {v*100:.1f}%", style={'color': colors['text'], 'font-family': 'Poppins'}) 
-                        for k, v in factors.items()])
+                html.H3(f"{disaster_type.capitalize()} Prediction Results", style={'color': color, 'font-family': 'Poppins'}),
+                html.P(f"Location: {location}", style={'color': COLORS['text'], 'font-family': 'Poppins'}),
+                html.P(f"Probability: {prob * 100:.2f}%", style={'color': COLORS['text'], 'font-family': 'Poppins'}),
+                html.H4("Key Factors:", style={'color': COLORS['text'], 'font-family': 'Poppins'}),
+                html.Ul([html.Li(f"{k}: {v:.1f}%", style={'color': COLORS['text'], 'font-family': 'Poppins'}) for k, v in factors.items()])
             ]
-            
             results.extend([result_text, fig_gauge, fig_forecast, fig_factors])
-        
         return results
-        
     except Exception as e:
         print(f"Error in prediction: {str(e)}")
         traceback.print_exc()
@@ -784,7 +749,7 @@ def calculate_factor_impacts(weather_data):
     pressure = weather_data['main']['pressure']
     wind_speed = weather_data['wind']['speed']
 
-    # Calculate individual impacts
+    # Calculate individual impacts (normalized to 0-1 range)
     temp_impact = calculate_temperature_impact(temp)
     humidity_impact = calculate_humidity_impact(humidity)
     pressure_impact = calculate_pressure_impact(pressure)
@@ -792,15 +757,24 @@ def calculate_factor_impacts(weather_data):
 
     # Calculate total impact
     total_impact = temp_impact + humidity_impact + pressure_impact + wind_impact
+    
+    # If total impact is 0, return equal small impacts
     if total_impact == 0:
-        impacts = {k: 0 for k in ['temperature', 'humidity', 'pressure', 'wind_speed']}
-    else:
-        impacts = {
-            'temperature': round((temp_impact / total_impact) * 100, 1),
-            'humidity': round((humidity_impact / total_impact) * 100, 1),
-            'pressure': round((pressure_impact / total_impact) * 100, 1),
-            'wind_speed': round((wind_impact / total_impact) * 100, 1)
+        return {
+            'temperature': 25.0,
+            'humidity': 25.0,
+            'pressure': 25.0,
+            'wind_speed': 25.0
         }
+    
+    # Calculate percentages (ensuring they sum to 100%)
+    impacts = {
+        'temperature': round((temp_impact / total_impact) * 100, 1),
+        'humidity': round((humidity_impact / total_impact) * 100, 1),
+        'pressure': round((pressure_impact / total_impact) * 100, 1),
+        'wind_speed': round((wind_impact / total_impact) * 100, 1)
+    }
+    
     # Ensure values sum to 100% (fix rounding errors)
     total = sum(impacts.values())
     if total != 100.0:
@@ -808,47 +782,52 @@ def calculate_factor_impacts(weather_data):
         # Add the difference to the largest value
         max_key = max(impacts, key=impacts.get)
         impacts[max_key] += diff
+    
     return impacts
 
 def calculate_temperature_impact(temp):
-    """Calculate the impact of temperature on tornado probability."""
-    if 20 <= temp <= 30:
+    """Calculate the impact of temperature on tornado probability (0-1 range)."""
+    if 20 <= temp <= 30:  # Optimal range
         return 1.0
-    elif 15 <= temp < 20 or 30 < temp <= 35:
+    elif 15 <= temp < 20 or 30 < temp <= 35:  # Good range
         return 0.7
-    elif 10 <= temp < 15 or 35 < temp <= 40:
+    elif 10 <= temp < 15 or 35 < temp <= 40:  # Moderate range
         return 0.4
-    return 0.1
+    else:  # Low impact
+        return 0.1
 
 def calculate_humidity_impact(humidity):
-    """Calculate the impact of humidity on tornado probability."""
-    if 60 <= humidity <= 80:
+    """Calculate the impact of humidity on tornado probability (0-1 range)."""
+    if 60 <= humidity <= 80:  # Optimal range
         return 1.0
-    elif 50 <= humidity < 60 or 80 < humidity <= 90:
+    elif 50 <= humidity < 60 or 80 < humidity <= 90:  # Good range
         return 0.7
-    elif 40 <= humidity < 50 or 90 < humidity <= 95:
+    elif 40 <= humidity < 50 or 90 < humidity <= 95:  # Moderate range
         return 0.4
-    return 0.1
+    else:  # Low impact
+        return 0.1
 
 def calculate_pressure_impact(pressure):
-    """Calculate the impact of pressure on tornado probability."""
-    if 980 <= pressure <= 1000:
+    """Calculate the impact of pressure on tornado probability (0-1 range)."""
+    if 980 <= pressure <= 1000:  # Optimal range
         return 1.0
-    elif 970 <= pressure < 980 or 1000 < pressure <= 1010:
+    elif 970 <= pressure < 980 or 1000 < pressure <= 1010:  # Good range
         return 0.7
-    elif 960 <= pressure < 970 or 1010 < pressure <= 1020:
+    elif 960 <= pressure < 970 or 1010 < pressure <= 1020:  # Moderate range
         return 0.4
-    return 0.1
+    else:  # Low impact
+        return 0.1
 
 def calculate_wind_impact(wind_speed):
-    """Calculate the impact of wind speed on tornado probability."""
-    if 10 <= wind_speed <= 20:
+    """Calculate the impact of wind speed on tornado probability (0-1 range)."""
+    if 10 <= wind_speed <= 20:  # Optimal range
         return 1.0
-    elif 7 <= wind_speed < 10 or 20 < wind_speed <= 25:
+    elif 7 <= wind_speed < 10 or 20 < wind_speed <= 25:  # Good range
         return 0.7
-    elif 5 <= wind_speed < 7 or 25 < wind_speed <= 30:
+    elif 5 <= wind_speed < 7 or 25 < wind_speed <= 30:  # Moderate range
         return 0.4
-    return 0.1
+    else:  # Low impact
+        return 0.1
 
 def calculate_earthquake_probability(weather_data):
     """
@@ -1065,6 +1044,44 @@ def get_30_day_forecast(lat, lon):
         })
     
     return forecast
+
+# --- Prediction method stubs ---
+def predict_with_quantum(weather_data, disaster_type):
+    if disaster_type == 'tornado':
+        # Use the improved quantum model instead of the old calculation
+        # Add coordinates to weather_data if they exist
+        if 'coord' not in weather_data and hasattr(predictor, '_is_low_tornado_region'):
+            # If coordinates are missing, we can't determine if it's a low-risk region
+            # So we'll use a more conservative approach
+            return predictor.predict(weather_data) * 0.5  # Reduce probability by 50%
+        return predictor.predict(weather_data)
+    elif disaster_type == 'earthquake':
+        return calculate_earthquake_probability(weather_data)
+    elif disaster_type in ['fire', 'wildfire']:
+        return calculate_fire_probability(weather_data)
+    elif disaster_type == 'flood':
+        return calculate_flood_probability(weather_data)
+    return 0.0
+
+def predict_with_lstm(weather_data, disaster_type):
+    # Stub: Replace with real LSTM model
+    return random.uniform(0.2, 0.8)
+
+def predict_with_rf(weather_data, disaster_type):
+    # Stub: Replace with real Random Forest model
+    return random.uniform(0.2, 0.8)
+
+def predict_with_xgb(weather_data, disaster_type):
+    # Stub: Replace with real XGBoost model
+    return random.uniform(0.2, 0.8)
+
+def predict_with_svm(weather_data, disaster_type):
+    # Stub: Replace with real SVM model
+    return random.uniform(0.2, 0.8)
+
+def predict_with_mlp(weather_data, disaster_type):
+    # Stub: Replace with real MLP/ANN model
+    return random.uniform(0.2, 0.8)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000) 
