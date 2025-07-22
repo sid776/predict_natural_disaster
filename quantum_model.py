@@ -2,7 +2,8 @@ import pennylane as qml
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import traceback
-from qiskit import QuantumCircuit
+# Qiskit imports are not used in this implementation - using PennyLane instead
+# from qiskit import QuantumCircuit
 
 class QuantumTornadoPredictor:
     def __init__(self):
