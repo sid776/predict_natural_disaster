@@ -7,9 +7,10 @@ const Navbar: React.FC = () => {
     <AppBar
       position="static"
       sx={{
-        backgroundColor: COLORS.guide,
+        background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)`,
         borderBottom: `1px solid ${COLORS.sidebar_border}`,
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        boxShadow:
+          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
       }}
     >
       <Toolbar>
@@ -19,8 +20,9 @@ const Navbar: React.FC = () => {
             component="div"
             sx={{
               color: "#ffffff",
-              fontWeight: "bold",
+              fontWeight: "700",
               fontSize: "1.5rem",
+              letterSpacing: "-0.025em",
             }}
           >
             🌪️ Natural Disaster Predictor

@@ -1,18 +1,20 @@
 export const COLORS = {
-  main_bg: "#f5f5f5",
+  main_bg: "#f8fafc",
   card_bg: "#ffffff",
   sidebar_bg: "#ffffff",
-  sidebar_border: "#e0e0e0",
-  text: "#333333",
-  text_secondary: "#666666",
-  tornado: "#ff6b6b",
-  earthquake: "#4ecdc4",
-  wildfire: "#ffa726",
-  flood: "#42a5f5",
-  guide: "#9c27b0",
-  success: "#4caf50",
-  warning: "#ff9800",
-  error: "#f44336",
+  sidebar_border: "#e2e8f0",
+  text: "#1e293b",
+  text_secondary: "#64748b",
+  tornado: "#ef4444",
+  earthquake: "#10b981",
+  wildfire: "#f59e0b",
+  flood: "#3b82f6",
+  primary: "#0f172a",
+  secondary: "#64748b",
+  success: "#10b981",
+  warning: "#f59e0b",
+  error: "#ef4444",
+  info: "#3b82f6",
 };
 
 export const DISASTER_TYPES = {
@@ -47,7 +49,7 @@ export const PREDICTION_MODELS = {
     label: "Quantum AI",
     description: "Quantum-inspired machine learning using Qiskit",
     icon: "⚛️",
-    color: COLORS.guide,
+    color: COLORS.primary,
   },
   lstm: {
     label: "LSTM (Deep Learning)",
@@ -71,13 +73,13 @@ export const PREDICTION_MODELS = {
     label: "SVM",
     description: "Support Vector Machine classifier",
     icon: "🔧",
-    color: COLORS.tornado,
+    color: COLORS.info,
   },
   mlp: {
     label: "MLP/ANN",
     description: "Multi-layer Perceptron neural network",
     icon: "🕸️",
-    color: COLORS.earthquake,
+    color: COLORS.secondary,
   },
 };
 

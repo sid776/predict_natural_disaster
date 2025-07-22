@@ -74,10 +74,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               borderColor: COLORS.sidebar_border,
             },
             "&:hover fieldset": {
-              borderColor: COLORS.guide,
+              borderColor: COLORS.primary,
             },
             "&.Mui-focused fieldset": {
-              borderColor: COLORS.guide,
+              borderColor: COLORS.primary,
             },
           },
           "& .MuiInputLabel-root": {
@@ -100,10 +100,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               borderColor: COLORS.sidebar_border,
             },
             "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: COLORS.guide,
+              borderColor: COLORS.primary,
             },
             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: COLORS.guide,
+              borderColor: COLORS.primary,
             },
           }}
         >
@@ -133,18 +133,24 @@ const Sidebar: React.FC<SidebarProps> = ({
         disabled={loading || !location.trim()}
         startIcon={<PlayArrow />}
         sx={{
-          backgroundColor: COLORS.guide,
-          color: COLORS.text,
+          background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)`,
+          color: "#ffffff",
           py: 1.5,
           fontSize: "1.1rem",
-          fontWeight: "bold",
+          fontWeight: "600",
+          borderRadius: "8px",
+          textTransform: "none",
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
           "&:hover": {
-            backgroundColor: COLORS.guide,
-            opacity: 0.9,
+            background: `linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.primary} 100%)`,
+            boxShadow:
+              "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
           },
           "&:disabled": {
-            backgroundColor: COLORS.sidebar_border,
+            background: COLORS.sidebar_border,
             color: COLORS.text_secondary,
+            boxShadow: "none",
           },
         }}
       >

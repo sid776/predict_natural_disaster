@@ -23,10 +23,12 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
       elevation={0}
       sx={{
         backgroundColor: COLORS.card_bg,
-        border: `2px solid ${color}`,
-        borderRadius: 3,
+        border: `1px solid ${color}`,
+        borderRadius: "12px",
         p: 3,
         textAlign: "center",
+        boxShadow:
+          "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
       }}
     >
       <Typography variant="h6" fontWeight="bold" mb={2} color={COLORS.text}>

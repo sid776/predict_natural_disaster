@@ -34,10 +34,10 @@ const appTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: COLORS.guide,
+      main: COLORS.primary,
     },
     secondary: {
-      main: COLORS.earthquake,
+      main: COLORS.secondary,
     },
     background: {
       default: COLORS.main_bg,
