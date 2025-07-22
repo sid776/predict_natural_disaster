@@ -1,21 +1,23 @@
-version: 0.2
-phases:
-  install:
-    runtime-versions:
-      nodejs: 20
-  pre_build:
-    commands:
-      - echo "Installing frontend dependencies..."
-      - cd frontend
-      - npm ci
-  build:
-    commands:
-      - echo "Building frontend application..."
-      - npm run build
-artifacts:
-  base-directory: frontend/dist
-  files:
-    - "**/*"
-cache:
-  paths:
-    - frontend/node_modules/**/*
+version: 1
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Installing frontend dependencies..."
+            - npm ci
+        build:
+          commands:
+            - echo "Building frontend application..."
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - "**/*"
+      cache:
+        paths:
+          - node_modules/**/*
+      buildPath: /usr/src/app
+      container:
+        image: node:20-alpine
