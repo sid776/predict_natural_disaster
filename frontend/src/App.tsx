@@ -375,17 +375,206 @@ function App() {
                             textAlign: "center",
                           }}
                         >
-                          <Typography variant="h6" color="text.secondary">
-                            No prediction data available for{" "}
-                            {DISASTER_TYPES[disasterType].label.toLowerCase()}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            mt={1}
+                          {/* Welcome Icon */}
+                          <Box
+                            sx={{
+                              fontSize: "4rem",
+                              mb: 2,
+                              opacity: 0.7,
+                            }}
                           >
-                            Enter a location and click "Predict" to get started.
+                            {DISASTER_TYPES[disasterType].icon}
+                          </Box>
+
+                          {/* Welcome Title */}
+                          <Typography
+                            variant="h5"
+                            fontWeight="bold"
+                            color={DISASTER_TYPES[disasterType].color}
+                            mb={2}
+                          >
+                            Welcome to {DISASTER_TYPES[disasterType].label}{" "}
+                            Analysis
                           </Typography>
+
+                          {/* Description */}
+                          <Typography
+                            variant="body1"
+                            color="text.secondary"
+                            mb={3}
+                            sx={{ maxWidth: 600, mx: "auto" }}
+                          >
+                            {DISASTER_TYPES[disasterType].description}
+                          </Typography>
+
+                          {/* Quick Start Guide */}
+                          <Box
+                            sx={{
+                              backgroundColor: COLORS.main_bg,
+                              borderRadius: 2,
+                              p: 3,
+                              mb: 3,
+                              textAlign: "left",
+                            }}
+                          >
+                            <Typography variant="h6" fontWeight="bold" mb={2}>
+                              🚀 Quick Start Guide
+                            </Typography>
+                            <Box component="ol" sx={{ pl: 2, m: 0 }}>
+                              <Typography component="li" variant="body2" mb={1}>
+                                Enter a city name (e.g., "New York, NY" or
+                                "London, UK")
+                              </Typography>
+                              <Typography component="li" variant="body2" mb={1}>
+                                Select your preferred AI model from the sidebar
+                              </Typography>
+                              <Typography component="li" variant="body2" mb={1}>
+                                Click "Predict" to analyze{" "}
+                                {DISASTER_TYPES[
+                                  disasterType
+                                ].label.toLowerCase()}{" "}
+                                risk
+                              </Typography>
+                              <Typography component="li" variant="body2">
+                                View detailed forecasts, probability gauges, and
+                                contributing factors
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          {/* Example Locations */}
+                          <Box
+                            sx={{
+                              backgroundColor: COLORS.main_bg,
+                              borderRadius: 2,
+                              p: 3,
+                              mb: 3,
+                            }}
+                          >
+                            <Typography variant="h6" fontWeight="bold" mb={2}>
+                              🌍 Try These Locations
+                            </Typography>
+                            <Box
+                              display="flex"
+                              flexWrap="wrap"
+                              gap={1}
+                              justifyContent="center"
+                            >
+                              {[
+                                "Miami, FL",
+                                "Los Angeles, CA",
+                                "Tokyo, Japan",
+                                "Sydney, Australia",
+                                "London, UK",
+                              ].map((loc) => (
+                                <Box
+                                  key={loc}
+                                  sx={{
+                                    backgroundColor: COLORS.card_bg,
+                                    border: `1px solid ${COLORS.border}`,
+                                    borderRadius: 1,
+                                    px: 2,
+                                    py: 1,
+                                    cursor: "pointer",
+                                    "&:hover": {
+                                      backgroundColor: COLORS.primary,
+                                      color: "#ffffff",
+                                    },
+                                  }}
+                                  onClick={() => setLocation(loc)}
+                                >
+                                  <Typography variant="body2" fontWeight="500">
+                                    {loc}
+                                  </Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          </Box>
+
+                          {/* What You'll Get */}
+                          <Box
+                            sx={{
+                              backgroundColor: COLORS.main_bg,
+                              borderRadius: 2,
+                              p: 3,
+                            }}
+                          >
+                            <Typography variant="h6" fontWeight="bold" mb={2}>
+                              📊 What You'll Get
+                            </Typography>
+                            <Box
+                              display="grid"
+                              gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))"
+                              gap={2}
+                            >
+                              <Box textAlign="center">
+                                <Typography
+                                  variant="h4"
+                                  color={DISASTER_TYPES[disasterType].color}
+                                  mb={1}
+                                >
+                                  🎯
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold">
+                                  Risk Probability
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  Current risk assessment
+                                </Typography>
+                              </Box>
+                              <Box textAlign="center">
+                                <Typography
+                                  variant="h4"
+                                  color={DISASTER_TYPES[disasterType].color}
+                                  mb={1}
+                                >
+                                  📈
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold">
+                                  30-Day Forecast
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  Future risk trends
+                                </Typography>
+                              </Box>
+                              <Box textAlign="center">
+                                <Typography
+                                  variant="h4"
+                                  color={DISASTER_TYPES[disasterType].color}
+                                  mb={1}
+                                >
+                                  🔍
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold">
+                                  Key Factors
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  Weather influences
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+
+                          {/* Call to Action */}
+                          <Box mt={3}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ fontStyle: "italic" }}
+                            >
+                              Ready to get started? Enter a location above and
+                              click "Predict"!
+                            </Typography>
+                          </Box>
                         </Box>
                       )}
                     </Box>
