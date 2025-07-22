@@ -45,18 +45,39 @@ export const DISASTER_TYPES = {
 export const PREDICTION_MODELS = {
   quantum: {
     label: "Quantum AI",
-    description: "Advanced quantum computing model",
+    description: "Quantum-inspired machine learning using Qiskit",
+    icon: "⚛️",
     color: COLORS.guide,
   },
-  ml: {
-    label: "Machine Learning",
-    description: "Traditional ML algorithms",
+  lstm: {
+    label: "LSTM (Deep Learning)",
+    description: "Long Short-Term Memory neural networks",
+    icon: "🧠",
     color: COLORS.success,
   },
-  statistical: {
-    label: "Statistical",
-    description: "Statistical analysis model",
+  rf: {
+    label: "Random Forest",
+    description: "Ensemble learning method with decision trees",
+    icon: "🌲",
     color: COLORS.warning,
+  },
+  xgb: {
+    label: "XGBoost",
+    description: "Gradient boosting framework",
+    icon: "📈",
+    color: COLORS.error,
+  },
+  svm: {
+    label: "SVM",
+    description: "Support Vector Machine classifier",
+    icon: "🔧",
+    color: COLORS.tornado,
+  },
+  mlp: {
+    label: "MLP/ANN",
+    description: "Multi-layer Perceptron neural network",
+    icon: "🕸️",
+    color: COLORS.earthquake,
   },
 };
 

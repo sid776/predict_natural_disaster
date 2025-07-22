@@ -1,5 +1,5 @@
 export type DisasterType = "tornado" | "earthquake" | "wildfire" | "flood";
-export type PredictionModel = "quantum" | "ml" | "statistical";
+export type PredictionModel = "quantum" | "lstm" | "rf" | "xgb" | "svm" | "mlp";
 
 // Backend Weather Data Structure
 export interface WeatherMain {

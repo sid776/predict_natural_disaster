@@ -110,7 +110,15 @@ const Sidebar: React.FC<SidebarProps> = ({
           {Object.entries(PREDICTION_MODELS).map(([key, model]) => (
             <MenuItem key={key} value={key}>
               <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="body2">{model.label}</Typography>
+                <span>{model.icon}</span>
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">
+                    {model.label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {model.description}
+                  </Typography>
+                </Box>
               </Box>
             </MenuItem>
           ))}
@@ -154,14 +162,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       <Box
         mt={3}
         p={2}
-        sx={{ backgroundColor: COLORS.card_bg, borderRadius: 1 }}
+        sx={{
+          backgroundColor: COLORS.card_bg,
+          borderRadius: 1,
+          border: `1px solid ${COLORS.sidebar_border}`,
+        }}
       >
         <Typography variant="body2" color={COLORS.text_secondary} mb={1}>
           Selected Model:
         </Typography>
-        <Typography variant="body1" fontWeight="bold" color={COLORS.text}>
-          {PREDICTION_MODELS[selectedModel].label}
-        </Typography>
+        <Box display="flex" alignItems="center" gap={1} mb={1}>
+          <span style={{ fontSize: "1.2rem" }}>
+            {PREDICTION_MODELS[selectedModel].icon}
+          </span>
+          <Typography variant="body1" fontWeight="bold" color={COLORS.text}>
+            {PREDICTION_MODELS[selectedModel].label}
+          </Typography>
+        </Box>
         <Typography variant="caption" color={COLORS.text_secondary}>
           {PREDICTION_MODELS[selectedModel].description}
         </Typography>
