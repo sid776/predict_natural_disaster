@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { BatchPredictionResponse, PredictionModel, DisasterType } from "../types";
 
-const API_BASE_URL = process.env.VITE_API_BASE_URL || "http://localhost:8001";
+const API_BASE_URL = process.env.VITE_API_BASE_URL || "https://predictnaturaldisasterbackend-production.up.railway.app";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -153,6 +153,12 @@ async def simple_health_check():
     """Simple health check endpoint"""
     return {"status": "healthy", "timestamp": time.time()}
 
+# API health check endpoint for Railway
+@app.get("/api/health")
+async def api_health_check():
+    """API health check endpoint for Railway"""
+    return {"status": "healthy", "timestamp": time.time()}
+
 # API documentation customization
 @app.get("/docs", include_in_schema=False)
 async def custom_docs():
