@@ -1,20 +1,42 @@
 export const COLORS = {
-  main_bg: "#f8fafc",
+  // Background colors
+  main_bg: "#f0f4f8",
   card_bg: "#ffffff",
   sidebar_bg: "#ffffff",
   sidebar_border: "#e2e8f0",
+  
+  // Text colors
   text: "#1e293b",
   text_secondary: "#64748b",
-  tornado: "#ef4444",
-  earthquake: "#10b981",
-  wildfire: "#f59e0b",
-  flood: "#3b82f6",
-  primary: "#0f172a",
-  secondary: "#64748b",
-  success: "#10b981",
-  warning: "#f59e0b",
-  error: "#ef4444",
-  info: "#3b82f6",
+  
+  // Disaster colors (more vibrant)
+  tornado: "#dc2626",
+  earthquake: "#059669",
+  wildfire: "#d97706",
+  flood: "#2563eb",
+  
+  // Brand colors
+  primary: "#1e40af",
+  secondary: "#7c3aed",
+  
+  // Status colors
+  success: "#059669",
+  warning: "#d97706",
+  error: "#dc2626",
+  info: "#2563eb",
+  
+  // Additional colors
+  accent: "#f59e0b",
+  highlight: "#fbbf24",
+  muted: "#94a3b8",
+  border: "#e2e8f0",
+  
+  // Gradients
+  gradient_primary: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
+  gradient_secondary: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
+  gradient_success: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+  gradient_warning: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+  gradient_error: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)",
 };
 
 export const DISASTER_TYPES = {

@@ -7,10 +7,10 @@ const Navbar: React.FC = () => {
     <AppBar
       position="static"
       sx={{
-        background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)`,
-        borderBottom: `1px solid ${COLORS.sidebar_border}`,
+        background: COLORS.gradient_primary,
+        borderBottom: `2px solid ${COLORS.border}`,
         boxShadow:
-          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          "0 8px 32px -8px rgba(0, 0, 0, 0.2), 0 4px 16px -4px rgba(0, 0, 0, 0.1)",
       }}
     >
       <Toolbar>

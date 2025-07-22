@@ -65,12 +65,22 @@ const FactorsChart: React.FC<FactorsChartProps> = ({
     <Paper
       elevation={0}
       sx={{
-        backgroundColor: COLORS.card_bg,
-        border: `1px solid ${color}`,
-        borderRadius: "12px",
+        background: `linear-gradient(135deg, ${COLORS.card_bg} 0%, ${COLORS.main_bg} 100%)`,
+        border: `2px solid ${color}`,
+        borderRadius: "16px",
         p: 3,
-        boxShadow:
-          "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+        boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)`,
+        position: "relative",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "4px",
+          background: `linear-gradient(90deg, ${color} 0%, ${COLORS.accent} 100%)`,
+        },
       }}
     >
       <Typography variant="h6" fontWeight="bold" mb={2} color={COLORS.text}>

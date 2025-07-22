@@ -58,17 +58,47 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
     <Paper
       elevation={0}
       sx={{
-        backgroundColor: COLORS.card_bg,
-        border: `1px solid ${color}`,
-        borderRadius: "12px",
+        background: `linear-gradient(135deg, ${COLORS.card_bg} 0%, ${COLORS.main_bg} 100%)`,
+        border: `2px solid ${color}`,
+        borderRadius: "16px",
         p: 3,
-        boxShadow:
-          "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+        boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)`,
+        position: "relative",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "4px",
+          background: `linear-gradient(90deg, ${color} 0%, ${COLORS.accent} 100%)`,
+        },
       }}
     >
-      <Typography variant="h6" fontWeight="bold" mb={2} color={COLORS.text}>
-        Forecast Timeline
-      </Typography>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
+        <Typography variant="h6" fontWeight="bold" color={COLORS.text}>
+          30-Day Forecast Timeline
+        </Typography>
+        <Box display="flex" gap={2}>
+          <Typography variant="body2" color={COLORS.text_secondary}>
+            {chartData.length} days
+          </Typography>
+          <Typography variant="body2" color={COLORS.text_secondary}>
+            Avg:{" "}
+            {formatPercentage(
+              chartData.reduce((sum, day) => sum + day.probability, 0) /
+                chartData.length /
+                100
+            )}
+          </Typography>
+        </Box>
+      </Box>
 
       {chartData.length > 0 ? (
         <Box sx={{ height: 300 }}>
@@ -93,9 +123,20 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
                 type="monotone"
                 dataKey="probability"
                 stroke={color}
-                strokeWidth={3}
-                dot={{ fill: color, strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: color, strokeWidth: 2 }}
+                strokeWidth={4}
+                dot={{
+                  fill: color,
+                  strokeWidth: 2,
+                  r: 5,
+                  stroke: COLORS.card_bg,
+                }}
+                activeDot={{
+                  r: 8,
+                  stroke: color,
+                  strokeWidth: 3,
+                  fill: COLORS.highlight,
+                }}
+                strokeDasharray="0"
               />
             </LineChart>
           </ResponsiveContainer>

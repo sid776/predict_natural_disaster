@@ -133,24 +133,26 @@ const Sidebar: React.FC<SidebarProps> = ({
         disabled={loading || !location.trim()}
         startIcon={<PlayArrow />}
         sx={{
-          background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%)`,
+          background: COLORS.gradient_primary,
           color: "#ffffff",
           py: 1.5,
           fontSize: "1.1rem",
-          fontWeight: "600",
-          borderRadius: "8px",
+          fontWeight: "700",
+          borderRadius: "12px",
           textTransform: "none",
           boxShadow:
-            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            "0 6px 12px -2px rgba(30, 64, 175, 0.3), 0 4px 8px -1px rgba(0, 0, 0, 0.1)",
           "&:hover": {
-            background: `linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.primary} 100%)`,
+            background: COLORS.gradient_secondary,
             boxShadow:
-              "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+              "0 8px 16px -2px rgba(124, 58, 237, 0.4), 0 6px 12px -1px rgba(0, 0, 0, 0.15)",
+            transform: "translateY(-1px)",
           },
           "&:disabled": {
-            background: COLORS.sidebar_border,
+            background: COLORS.muted,
             color: COLORS.text_secondary,
             boxShadow: "none",
+            transform: "none",
           },
         }}
       >
