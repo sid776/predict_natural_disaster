@@ -25,14 +25,36 @@ const FactorsChart: React.FC<FactorsChartProps> = ({
 
   // Transform factors data for the chart
   const chartData = Object.entries(factors)
-    .filter(([, value]) => value !== undefined && value !== null)
+    .filter(([, value]) => value !== undefined && value !== null && value > 0)
     .map(([key, value]) => ({
       name: key.charAt(0).toUpperCase() + key.slice(1).replace("_", " "),
-      value: value || 0,
+      value: Math.abs(value || 0), // Use absolute value for display
+      originalValue: value || 0,
       impact: value > 0 ? "positive" : value < 0 ? "negative" : "neutral",
     }))
-    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)) // Sort by absolute impact
+    .sort((a, b) => b.value - a.value) // Sort by impact value
     .slice(0, 10); // Show top 10 factors
+
+  // If no data after filtering, show at least one factor with 0 value
+  if (chartData.length === 0) {
+    const firstFactor = Object.keys(factors)[0];
+    if (firstFactor) {
+      chartData.push({
+        name:
+          firstFactor.charAt(0).toUpperCase() +
+          firstFactor.slice(1).replace("_", " "),
+        value: 0,
+        originalValue: 0,
+        impact: "neutral",
+      });
+    }
+  }
+
+  // Debug logging
+  console.log("Factors data:", factors);
+  console.log("Chart data:", chartData);
+  console.log("Chart data length:", chartData.length);
+  console.log("First chart item:", chartData[0]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -50,7 +72,7 @@ const FactorsChart: React.FC<FactorsChartProps> = ({
             {label}
           </Typography>
           <Typography variant="body2" color={COLORS.text_secondary}>
-            Impact: {payload[0].value.toFixed(1)}%
+            Impact: {factor?.originalValue?.toFixed(1)}%
           </Typography>
           <Typography variant="body2" color={COLORS.text_secondary}>
             Type: {factor?.impact}
@@ -83,33 +105,70 @@ const FactorsChart: React.FC<FactorsChartProps> = ({
         },
       }}
     >
-      <Typography variant="h6" fontWeight="bold" mb={2} color={COLORS.text}>
-        Contributing Factors
-      </Typography>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
+        <Typography variant="h6" fontWeight="bold" color={COLORS.text}>
+          Contributing Factors
+        </Typography>
+        <Box display="flex" gap={1}>
+          {chartData.slice(0, 3).map((factor) => (
+            <Box
+              key={factor.name}
+              sx={{
+                backgroundColor: color,
+                color: "#ffffff",
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: "0.75rem",
+                fontWeight: "bold",
+              }}
+            >
+              {factor.name}: {factor.originalValue?.toFixed(1)}%
+            </Box>
+          ))}
+        </Box>
+      </Box>
 
       {chartData.length > 0 ? (
         <Box sx={{ height: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} layout="horizontal">
+            <BarChart
+              data={chartData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke={COLORS.sidebar_border}
               />
               <XAxis
-                type="number"
-                stroke={COLORS.text_secondary}
-                fontSize={12}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <YAxis
                 type="category"
                 dataKey="name"
                 stroke={COLORS.text_secondary}
                 fontSize={12}
-                width={100}
+                axisLine={true}
+                tickLine={true}
+              />
+              <YAxis
+                type="number"
+                stroke={COLORS.text_secondary}
+                fontSize={12}
+                tickFormatter={(value) => `${value}%`}
+                domain={[0, 100]}
+                axisLine={true}
+                tickLine={true}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" fill={color} radius={[0, 4, 4, 0]} />
+              <Bar
+                dataKey="value"
+                fill={color}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
             </BarChart>
           </ResponsiveContainer>
         </Box>
@@ -120,10 +179,18 @@ const FactorsChart: React.FC<FactorsChartProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            flexDirection: "column",
+            gap: 1,
           }}
         >
           <Typography variant="body2" color={COLORS.text_secondary}>
             No factor data available
+          </Typography>
+          <Typography variant="caption" color={COLORS.text_secondary}>
+            Debug: {JSON.stringify(factors)}
+          </Typography>
+          <Typography variant="caption" color={COLORS.text_secondary}>
+            Chart data length: {chartData.length}
           </Typography>
         </Box>
       )}
@@ -136,22 +203,49 @@ const FactorsChart: React.FC<FactorsChartProps> = ({
           sx={{ backgroundColor: COLORS.sidebar_bg, borderRadius: 1 }}
         >
           <Typography variant="body2" color={COLORS.text_secondary} mb={1}>
-            Top Factors:
+            Factor Breakdown:
           </Typography>
-          <Box display="flex" flexWrap="wrap" gap={1}>
-            {chartData.slice(0, 3).map((factor) => (
+          <Box display="flex" flexDirection="column" gap={1}>
+            {chartData.map((factor) => (
               <Box
                 key={factor.name}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
                 sx={{
-                  px: 1,
-                  py: 0.5,
-                  backgroundColor: color,
-                  color: COLORS.text,
+                  px: 2,
+                  py: 1,
+                  backgroundColor: COLORS.card_bg,
                   borderRadius: 1,
-                  fontSize: "0.75rem",
+                  border: `1px solid ${COLORS.border}`,
                 }}
               >
-                {factor.name}
+                <Typography variant="body2" color={COLORS.text}>
+                  {factor.name}
+                </Typography>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Box
+                    sx={{
+                      width: 60,
+                      height: 8,
+                      backgroundColor: COLORS.sidebar_border,
+                      borderRadius: 4,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: `${factor.value}%`,
+                        height: "100%",
+                        backgroundColor: color,
+                        borderRadius: 4,
+                      }}
+                    />
+                  </Box>
+                  <Typography variant="body2" fontWeight="bold" color={color}>
+                    {factor.originalValue?.toFixed(1)}%
+                  </Typography>
+                </Box>
               </Box>
             ))}
           </Box>

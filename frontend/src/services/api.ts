@@ -43,6 +43,7 @@ export const apiService = {
           
           // Extract the prediction data from the API response
           if (response.data.success && response.data.data) {
+            console.log(`${disasterType} prediction data:`, response.data.data);
             predictions[disasterType] = response.data.data;
           }
         } catch (error: any) {

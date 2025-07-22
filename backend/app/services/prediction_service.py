@@ -326,15 +326,13 @@ class PredictionService:
             pressure_impact = self._calculate_pressure_impact(pressure)
             wind_impact = self._calculate_wind_impact(wind_speed)
             
-            total_impact = temp_impact + humidity_impact + pressure_impact + wind_impact
+            # Ensure minimum impact values for better visualization
+            temp_impact = max(temp_impact, 0.1)
+            humidity_impact = max(humidity_impact, 0.1)
+            pressure_impact = max(pressure_impact, 0.1)
+            wind_impact = max(wind_impact, 0.1)
             
-            if total_impact == 0:
-                return FactorImpacts(
-                    temperature=25.0,
-                    humidity=25.0,
-                    pressure=25.0,
-                    wind_speed=25.0
-                )
+            total_impact = temp_impact + humidity_impact + pressure_impact + wind_impact
             
             return FactorImpacts(
                 temperature=round((temp_impact / total_impact) * 100, 1),
@@ -343,32 +341,38 @@ class PredictionService:
                 wind_speed=round((wind_impact / total_impact) * 100, 1)
             )
         elif disaster_type == DisasterType.earthquake:
-            pressure_impact = max(0, min(1, (1013 - pressure) / 50))
-            humidity_impact = max(0, min(1, humidity / 100))
+            pressure_impact = max(0.1, min(1, (1013 - pressure) / 50))
+            humidity_impact = max(0.1, min(1, humidity / 100))
+            
+            total_impact = pressure_impact + humidity_impact
             
             return FactorImpacts(
-                pressure=pressure_impact * 100,
-                humidity=humidity_impact * 100
+                pressure=round((pressure_impact / total_impact) * 100, 1),
+                humidity=round((humidity_impact / total_impact) * 100, 1)
             )
         elif disaster_type == DisasterType.wildfire:
-            temp_impact = max(0, min(1, (temp - 20) / 20))
-            humidity_impact = max(0, min(1, (100 - humidity) / 70))
-            wind_impact = max(0, min(1, wind_speed / 10))
+            temp_impact = max(0.1, min(1, (temp - 20) / 20))
+            humidity_impact = max(0.1, min(1, (100 - humidity) / 70))
+            wind_impact = max(0.1, min(1, wind_speed / 10))
+            
+            total_impact = temp_impact + humidity_impact + wind_impact
             
             return FactorImpacts(
-                temperature=temp_impact * 100,
-                humidity=humidity_impact * 100,
-                wind_speed=wind_impact * 100
+                temperature=round((temp_impact / total_impact) * 100, 1),
+                humidity=round((humidity_impact / total_impact) * 100, 1),
+                wind_speed=round((wind_impact / total_impact) * 100, 1)
             )
         elif disaster_type == DisasterType.flood:
-            humidity_impact = max(0, min(1, (humidity - 60) / 40))
-            pressure_impact = max(0, min(1, (1013 - pressure) / 30))
-            temp_impact = max(0, min(1, 1 - abs(temp - 15) / 20))
+            humidity_impact = max(0.1, min(1, (humidity - 60) / 40))
+            pressure_impact = max(0.1, min(1, (1013 - pressure) / 30))
+            temp_impact = max(0.1, min(1, 1 - abs(temp - 15) / 20))
+            
+            total_impact = humidity_impact + pressure_impact + temp_impact
             
             return FactorImpacts(
-                humidity=humidity_impact * 100,
-                pressure=pressure_impact * 100,
-                temperature=temp_impact * 100
+                humidity=round((humidity_impact / total_impact) * 100, 1),
+                pressure=round((pressure_impact / total_impact) * 100, 1),
+                temperature=round((temp_impact / total_impact) * 100, 1)
             )
         else:
             return FactorImpacts()
