@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  natural-disaster-predictor:
+    build: .
+    container_name: natural-disaster-predictor
+    ports:
+      - "8080:8080"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+      # Add your OpenWeatherMap API key here if you have one
+      # - OPENWEATHERMAP_API_KEY=your_api_key_here
+    volumes:
+      # Mount the current directory for development (optional)
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
