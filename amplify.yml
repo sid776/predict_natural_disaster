@@ -18,6 +18,3 @@ applications:
       cache:
         paths:
           - node_modules/**/*
-      buildPath: /usr/src/app
-      container:
-        image: node:20-alpine
