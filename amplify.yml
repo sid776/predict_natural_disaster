@@ -5,8 +5,10 @@ applications:
       phases:
         preBuild:
           commands:
+            - echo "Clearing npm cache..."
+            - npm cache clean --force
             - echo "Installing frontend dependencies..."
-            - npm ci --production=false
+            - npm ci --no-optional --production=false
         build:
           commands:
             - echo "Building frontend application..."
