@@ -6,11 +6,12 @@ applications:
         preBuild:
           commands:
             - echo "Installing frontend dependencies..."
-            - npm ci
+            - npm ci --production=false
         build:
           commands:
             - echo "Building frontend application..."
             - npm run build
+            - echo "Build completed successfully!"
       artifacts:
         baseDirectory: dist
         files:
@@ -18,3 +19,4 @@ applications:
       cache:
         paths:
           - node_modules/**/*
+          - .npm-cache/**/*

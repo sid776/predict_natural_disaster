@@ -1,145 +1,140 @@
 import React from "react";
 import { Box, Typography, Paper } from "@mui/material";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import type { DisasterType } from "../../types";
 import { COLORS, DISASTER_TYPES } from "../../utils/constants";
-import { getRiskLevel } from "../../utils/formatters";
+import type { DisasterType } from "../../types";
 
 interface ProbabilityGaugeProps {
-  probability: number; // 0-1
+  probability: number;
   disasterType: DisasterType;
-  title?: string;
-  size?: "small" | "medium" | "large";
 }
 
 const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
   probability,
   disasterType,
-  title,
-  size = "medium",
 }) => {
   const percentage = probability * 100;
-  const riskLevel = getRiskLevel(probability);
-  const disasterColor = DISASTER_TYPES[disasterType].color;
+  const color = DISASTER_TYPES[disasterType].color;
 
-  // Create data for the gauge
-  const gaugeData = [
-    { name: "Probability", value: percentage, fill: disasterColor },
-    { name: "Remaining", value: 100 - percentage, fill: "#f0f0f0" },
-  ];
-
-  const sizeConfig = {
-    small: { width: 200, height: 200, fontSize: 16 },
-    medium: { width: 300, height: 300, fontSize: 24 },
-    large: { width: 400, height: 400, fontSize: 32 },
-  };
-
-  const config = sizeConfig[size];
+  // Calculate gauge angle (0-180 degrees)
+  const angle = (percentage / 100) * 180;
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
-        p: 3,
         backgroundColor: COLORS.card_bg,
-        border: `2px solid ${disasterColor}`,
+        border: `2px solid ${color}`,
         borderRadius: 3,
+        p: 3,
+        textAlign: "center",
       }}
     >
-      <Typography
-        variant="h6"
-        component="h3"
-        sx={{
-          color: disasterColor,
-          fontWeight: "bold",
-          mb: 2,
-          textAlign: "center",
-        }}
-      >
-        {title || `${DISASTER_TYPES[disasterType].label} Probability`}
+      <Typography variant="h6" fontWeight="bold" mb={2} color={COLORS.text}>
+        Probability Gauge
       </Typography>
 
+      {/* Gauge Visualization */}
       <Box
         sx={{
-          width: config.width,
-          height: config.height,
-          mx: "auto",
           position: "relative",
+          width: 200,
+          height: 100,
+          mx: "auto",
+          mb: 2,
         }}
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={gaugeData}
-              cx="50%"
-              cy="50%"
-              innerRadius={config.width * 0.3}
-              outerRadius={config.width * 0.4}
-              startAngle={180}
-              endAngle={-180}
-              dataKey="value"
-            >
-              {gaugeData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-
-        {/* Center text */}
+        {/* Gauge Background */}
         <Box
           sx={{
             position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            textAlign: "center",
-          }}
-        >
-          <Typography
-            variant="h3"
-            sx={{
-              color: disasterColor,
-              fontWeight: "bold",
-              fontSize: config.fontSize,
-              lineHeight: 1,
-            }}
-          >
-            {percentage.toFixed(1)}%
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: riskLevel.color,
-              fontWeight: "bold",
-              mt: 1,
-            }}
-          >
-            {riskLevel.label}
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Risk level indicator */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 1,
-          mt: 2,
-        }}
-      >
-        <Box
-          sx={{
-            width: 12,
-            height: 12,
-            borderRadius: "50%",
-            backgroundColor: riskLevel.color,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 100,
+            borderRadius: "100px 100px 0 0",
+            background: `conic-gradient(from 0deg, ${color} 0deg, ${color} ${angle}deg, ${COLORS.sidebar_border} ${angle}deg, ${COLORS.sidebar_border} 180deg)`,
           }}
         />
-        <Typography variant="body2" color="text.secondary">
-          Risk Level: {riskLevel.label}
+
+        {/* Gauge Center */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 10,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 180,
+            height: 80,
+            borderRadius: "90px 90px 0 0",
+            backgroundColor: COLORS.card_bg,
+          }}
+        />
+
+        {/* Needle */}
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: `translateX(-50%) rotate(${angle - 90}deg)`,
+            width: 4,
+            height: 80,
+            backgroundColor: color,
+            borderRadius: 2,
+            transformOrigin: "bottom center",
+            transition: "transform 0.5s ease-in-out",
+          }}
+        />
+
+        {/* Center Point */}
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 12,
+            height: 12,
+            backgroundColor: color,
+            borderRadius: "50%",
+          }}
+        />
+      </Box>
+
+      {/* Percentage Display */}
+      <Typography variant="h3" fontWeight="bold" color={color} sx={{ mb: 1 }}>
+        {percentage.toFixed(1)}%
+      </Typography>
+
+      <Typography variant="body2" color={COLORS.text_secondary}>
+        {DISASTER_TYPES[disasterType].label} Probability
+      </Typography>
+
+      {/* Risk Level */}
+      <Box mt={2}>
+        <Typography
+          variant="body2"
+          color={COLORS.text_secondary}
+          sx={{ mb: 0.5 }}
+        >
+          Risk Level:
+        </Typography>
+        <Typography
+          variant="body1"
+          fontWeight="bold"
+          color={
+            percentage < 30
+              ? COLORS.success
+              : percentage < 70
+              ? COLORS.warning
+              : COLORS.error
+          }
+        >
+          {percentage < 30
+            ? "Low Risk"
+            : percentage < 70
+            ? "Medium Risk"
+            : "High Risk"}
         </Typography>
       </Box>
     </Paper>

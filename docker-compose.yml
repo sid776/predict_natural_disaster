@@ -13,6 +13,8 @@ services:
       - DEBUG=False
       # Add your API keys here if you have them
       - OPENWEATHERMAP_API_KEY=81e8b6ae8c17af9e5750586dfbe4a04b
+      # - USGS_API_KEY=your_api_key_here
+      # - NASA_POWER_API_KEY=your_api_key_here
     volumes:
       # Mount source code for development (comment out for production)
       - ./backend:/app/backend
@@ -37,9 +39,11 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_BASE_URL=http://localhost:8001
+      - NODE_ENV=development
     volumes:
       # Mount source code for development (comment out for production)
       - ./frontend:/app
+      # Exclude node_modules from mounting
       - /app/node_modules
     depends_on:
       backend:

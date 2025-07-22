@@ -1,94 +1,88 @@
-import axios from 'axios';
-import type { AxiosResponse } from 'axios';
-import type {
-  PredictionRequest,
-  PredictionResponse,
-  WeatherData,
-  GeocodingResponse,
-  ApiResponse,
-  PredictionModel,
-  DisasterType
-} from '../types';
+import axios from "axios";
+import type { BatchPredictionResponse, PredictionModel, DisasterType } from "../types";
 
-// API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+const API_BASE_URL = (import.meta.env as any)?.VITE_API_BASE_URL || "http://localhost:8001";
 
-// API endpoints
-export const API_ENDPOINTS = {
-  PREDICT: `${API_BASE_URL}/api/predict`,
-  WEATHER: (lat: number, lon: number) => `${API_BASE_URL}/api/weather/${lat}/${lon}`,
-  GEOCODE: (location: string) => `${API_BASE_URL}/api/geocode/${encodeURIComponent(location)}`,
-  MODELS: `${API_BASE_URL}/api/models`,
-  STATS: `${API_BASE_URL}/api/stats`,
-  HEALTH: `${API_BASE_URL}/api/health`,
-};
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-// API service functions
 export const apiService = {
-  async predict(data: PredictionRequest): Promise<PredictionResponse> {
-    const response = await fetch(API_ENDPOINTS.PREDICT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-  },
-
-  async getWeather(lat: number, lon: number): Promise<WeatherData> {
-    const response = await fetch(API_ENDPOINTS.WEATHER(lat, lon));
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    return response.json();
-  },
-
-  async geocode(location: string): Promise<GeocodingResponse> {
-    const response = await fetch(API_ENDPOINTS.GEOCODE(location));
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    return response.json();
-  },
-
-  async getModels(): Promise<PredictionModel[]> {
-    const response = await fetch(API_ENDPOINTS.MODELS);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    return response.json();
-  },
-
-  async getStats(): Promise<Record<DisasterType, any>> {
-    const response = await fetch(API_ENDPOINTS.STATS);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    return response.json();
-  },
-
+  // Health check
   async healthCheck(): Promise<boolean> {
-    const response = await fetch(API_ENDPOINTS.HEALTH);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    try {
+      const response = await apiClient.get("/api/health");
+      return response.status === 200;
+    } catch (error: any) {
+      console.error("Health check failed:", error);
+      return false;
     }
+  },
 
-    return response.json();
+  // Get batch predictions for all disaster types
+  async getBatchPredictions(
+    location: string,
+    model: PredictionModel
+  ): Promise<BatchPredictionResponse> {
+    try {
+      // Make individual predictions for each disaster type
+      const disasterTypes: DisasterType[] = ["tornado", "earthquake", "wildfire", "flood"];
+      const predictions: BatchPredictionResponse = {};
+
+      for (const disasterType of disasterTypes) {
+        try {
+          const response = await apiClient.post("/api/predict", {
+            location,
+            model,
+            disaster_type: disasterType,
+          });
+          
+          // Extract the prediction data from the API response
+          if (response.data.success && response.data.data) {
+            predictions[disasterType] = response.data.data;
+          }
+        } catch (error: any) {
+          console.error(`${disasterType} prediction failed:`, error);
+          // Continue with other disaster types even if one fails
+        }
+      }
+
+      return predictions;
+    } catch (error: any) {
+      console.error("Batch prediction failed:", error);
+      throw new Error(
+        error.response?.data?.detail || "Failed to get predictions"
+      );
+    }
+  },
+
+  // Get prediction for a specific disaster type
+  async getPrediction(
+    location: string,
+    disasterType: DisasterType,
+    model: PredictionModel
+  ): Promise<any> {
+    try {
+      const response = await apiClient.post("/api/predict", {
+        location,
+        model,
+        disaster_type: disasterType,
+      });
+      
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.error || "Prediction failed");
+      }
+    } catch (error: any) {
+      console.error(`${disasterType} prediction failed:`, error);
+      throw new Error(
+        error.response?.data?.detail || `Failed to get ${disasterType} prediction`
+      );
+    }
   },
 }; 

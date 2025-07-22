@@ -1,44 +1,56 @@
-// Weather data types
+export type DisasterType = "tornado" | "earthquake" | "wildfire" | "flood";
+export type PredictionModel = "quantum" | "ml" | "statistical";
+
+// Backend Weather Data Structure
+export interface WeatherMain {
+  temp: number; // Kelvin
+  humidity: number; // Percentage
+  pressure: number; // hPa
+}
+
+export interface WeatherWind {
+  speed: number; // m/s
+  deg: number; // degrees
+}
+
+export interface WeatherClouds {
+  all: number; // percentage
+}
+
+export interface WeatherRain {
+  h1?: number; // mm
+}
+
+export interface WeatherSys {
+  sunrise: number;
+  sunset: number;
+}
+
+export interface WeatherCondition {
+  id: number;
+  main: string;
+  description: string;
+  icon: string;
+}
+
+export interface WeatherCoord {
+  lat: number;
+  lon: number;
+}
+
 export interface WeatherData {
-  main: {
-    temp: number; // Kelvin
-    humidity: number; // Percentage
-    pressure: number; // hPa
-  };
-  wind: {
-    speed: number; // m/s
-    deg: number; // degrees
-  };
-  clouds: {
-    all: number; // percentage
-  };
-  rain?: {
-    '1h': number; // mm
-  };
-  sys: {
-    sunrise: number;
-    sunset: number;
-  };
-  weather: Array<{
-    id: number;
-    main: string;
-    description: string;
-    icon: string;
-  }>;
+  main: WeatherMain;
+  wind: WeatherWind;
+  clouds: WeatherClouds;
+  rain?: WeatherRain;
+  sys: WeatherSys;
+  weather: WeatherCondition[];
   visibility: number; // meters
-  coord: {
-    lat: number;
-    lon: number;
-  };
+  coord: WeatherCoord;
   mock_data?: boolean;
 }
 
-// Prediction model types
-export type PredictionModel = 'quantum' | 'lstm' | 'rf' | 'xgb' | 'svm' | 'mlp';
-
-export type DisasterType = 'tornado' | 'earthquake' | 'wildfire' | 'flood';
-
-// Forecast data types
+// Backend Forecast Structure
 export interface ForecastDay {
   date: string; // YYYY-MM-DD
   probability: number; // 0-1
@@ -46,7 +58,7 @@ export interface ForecastDay {
   key_factors: string[];
 }
 
-// Factor impact analysis
+// Backend Factor Impacts
 export interface FactorImpacts {
   temperature?: number; // percentage
   humidity?: number; // percentage
@@ -54,28 +66,24 @@ export interface FactorImpacts {
   wind_speed?: number; // percentage
 }
 
-// Prediction request
-export interface PredictionRequest {
+// Backend Prediction Metadata
+export interface PredictionMetadata {
   location: string;
   model: PredictionModel;
   disaster_type: DisasterType;
+  timestamp: string;
+  weather_data: WeatherData;
 }
 
-// Prediction response
+// Backend Prediction Response
 export interface PredictionResponse {
-  probability: number; // 0-1
+  probability: number;
   forecast: ForecastDay[];
   factors: FactorImpacts;
-  metadata: {
-    location: string;
-    model: PredictionModel;
-    disaster_type: DisasterType;
-    timestamp: string;
-    weather_data: WeatherData;
-  };
+  metadata: PredictionMetadata;
 }
 
-// API response wrapper
+// Backend API Response Wrapper
 export interface ApiResponse<T> {
   data: T;
   success: boolean;
@@ -83,51 +91,16 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-// Geocoding response
-export interface GeocodingResponse {
-  lat: number;
-  lon: number;
-  display_name: string;
+// Frontend Batch Prediction Response
+export interface BatchPredictionResponse {
+  tornado?: PredictionResponse;
+  earthquake?: PredictionResponse;
+  wildfire?: PredictionResponse;
+  flood?: PredictionResponse;
 }
 
-// Global statistics
-export interface GlobalStats {
-  count: number;
-  deaths: number;
-  injuries: number;
-  damage: number; // billions USD
-}
-
-export interface GlobalStatsData {
-  tornado: GlobalStats;
-  earthquake: GlobalStats;
-  fire: GlobalStats;
-  flood: GlobalStats;
-}
-
-// Chart data types
-export interface GaugeData {
-  value: number; // 0-100
-  label: string;
-  color: string;
-}
-
-export interface ChartDataPoint {
-  x: string | number;
-  y: number;
-  label?: string;
-}
-
-// UI State types
-export interface PredictionState {
-  loading: boolean;
-  error: string | null;
-  data: PredictionResponse | null;
-}
-
-export interface AppState {
-  location: string;
-  selectedModel: PredictionModel;
-  selectedDisaster: DisasterType;
-  predictions: Record<DisasterType, PredictionState>;
+export interface ApiError {
+  message: string;
+  code?: string;
+  details?: any;
 } 

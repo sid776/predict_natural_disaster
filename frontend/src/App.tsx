@@ -22,20 +22,17 @@ import FactorsChart from "./components/Charts/FactorsChart";
 
 // Hooks and Services
 import { useBatchPrediction } from "./hooks/usePrediction";
-import { ApiService } from "./services/api";
+import { apiService } from "./services/api";
 
 // Types and Utils
-import type {
-  DisasterType,
-  PredictionModel,
-  PredictionResponse,
-} from "./types";
+import type { DisasterType, PredictionModel } from "./types";
 import { COLORS, DISASTER_TYPES } from "./utils/constants";
 import { formatPercentage, getWeatherSummary } from "./utils/formatters";
 
 // Create theme
-const theme = createTheme({
+const appTheme = createTheme({
   palette: {
+    mode: "light",
     primary: {
       main: COLORS.guide,
     },
@@ -44,6 +41,11 @@ const theme = createTheme({
     },
     background: {
       default: COLORS.main_bg,
+      paper: COLORS.card_bg,
+    },
+    text: {
+      primary: COLORS.text,
+      secondary: COLORS.text_secondary,
     },
   },
   typography: {
@@ -90,14 +92,13 @@ function App() {
     error,
     data: predictions,
     predictAll,
-    reset,
   } = useBatchPrediction();
 
   // Check API health on mount
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const isHealthy = await ApiService.healthCheck();
+        const isHealthy = await apiService.healthCheck();
         setApiHealth(isHealthy);
       } catch (err) {
         setApiHealth(false);
@@ -118,7 +119,7 @@ function App() {
   };
 
   // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
   };
 
@@ -131,11 +132,8 @@ function App() {
   ];
   const currentDisasterType = disasterTypes[selectedTab];
 
-  // Get current prediction data
-  const currentPrediction = predictions?.[currentDisasterType];
-
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <Box sx={{ backgroundColor: COLORS.main_bg, minHeight: "100vh" }}>
         <Navbar />
@@ -158,7 +156,6 @@ function App() {
               onPredict={handlePredict}
               loading={loading}
               error={error}
-              forecastData={predictions?.tornado?.forecast}
             />
 
             {/* Main Content */}
@@ -206,184 +203,195 @@ function App() {
               </Box>
 
               {/* Tab Panels */}
-              {disasterTypes.map((disasterType, index) => (
-                <TabPanel key={disasterType} value={selectedTab} index={index}>
-                  <Box>
-                    <Typography
-                      variant="h4"
-                      component="h2"
-                      sx={{
-                        color: DISASTER_TYPES[disasterType].color,
-                        fontWeight: "bold",
-                        mb: 3,
-                        textAlign: "center",
-                      }}
-                    >
-                      {DISASTER_TYPES[disasterType].label} Analysis
-                    </Typography>
+              {disasterTypes.map((disasterType, index) => {
+                const prediction = predictions?.[disasterType];
 
-                    {loading && (
-                      <Box display="flex" justifyContent="center" my={4}>
-                        <CircularProgress size={60} />
-                      </Box>
-                    )}
+                return (
+                  <TabPanel
+                    key={disasterType}
+                    value={selectedTab}
+                    index={index}
+                  >
+                    <Box>
+                      <Typography
+                        variant="h4"
+                        component="h2"
+                        sx={{
+                          color: DISASTER_TYPES[disasterType].color,
+                          fontWeight: "bold",
+                          mb: 3,
+                          textAlign: "center",
+                        }}
+                      >
+                        {DISASTER_TYPES[disasterType].label} Analysis
+                      </Typography>
 
-                    {error && (
-                      <Alert severity="error" sx={{ mb: 3 }}>
-                        {error}
-                      </Alert>
-                    )}
+                      {loading && (
+                        <Box display="flex" justifyContent="center" my={4}>
+                          <CircularProgress size={60} />
+                        </Box>
+                      )}
 
-                    {currentPrediction && !loading && (
-                      <Box>
-                        {/* Results Summary */}
+                      {error && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                          {error}
+                        </Alert>
+                      )}
+
+                      {prediction && !loading && (
+                        <Box>
+                          {/* Results Summary */}
+                          <Box
+                            sx={{
+                              backgroundColor: COLORS.card_bg,
+                              border: `2px solid ${DISASTER_TYPES[disasterType].color}`,
+                              borderRadius: 3,
+                              p: 3,
+                              mb: 3,
+                            }}
+                          >
+                            <Typography variant="h6" fontWeight="bold" mb={2}>
+                              Prediction Results
+                            </Typography>
+
+                            <Box display="flex" flexWrap="wrap" gap={2}>
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Location
+                                </Typography>
+                                <Typography variant="body1" fontWeight="bold">
+                                  {prediction?.metadata?.location}
+                                </Typography>
+                              </Box>
+
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Probability
+                                </Typography>
+                                <Typography
+                                  variant="body1"
+                                  fontWeight="bold"
+                                  color={DISASTER_TYPES[disasterType].color}
+                                >
+                                  {formatPercentage(prediction.probability)}
+                                </Typography>
+                              </Box>
+
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Model Used
+                                </Typography>
+                                <Typography variant="body1" fontWeight="bold">
+                                  {prediction?.metadata?.model?.toUpperCase()}
+                                </Typography>
+                              </Box>
+                            </Box>
+
+                            {/* Weather Summary */}
+                            {prediction?.metadata?.weather_data && (
+                              <Box
+                                mt={2}
+                                pt={2}
+                                borderTop={`1px solid ${COLORS.sidebar_border}`}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  mb={1}
+                                >
+                                  Current Weather Conditions:
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={2}>
+                                  {Object.entries(
+                                    getWeatherSummary(
+                                      prediction?.metadata?.weather_data
+                                    )
+                                  ).map(([key, value]) => (
+                                    <Box key={key}>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        {key.charAt(0).toUpperCase() +
+                                          key.slice(1)}
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
+                                        fontWeight="bold"
+                                      >
+                                        {value}
+                                      </Typography>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+
+                          {/* Charts Grid */}
+                          <Box
+                            display="grid"
+                            gridTemplateColumns={
+                              isMobile
+                                ? "1fr"
+                                : "repeat(auto-fit, minmax(400px, 1fr))"
+                            }
+                            gap={3}
+                          >
+                            <ProbabilityGauge
+                              probability={prediction.probability}
+                              disasterType={disasterType}
+                            />
+
+                            <ForecastChart
+                              forecast={prediction?.forecast || []}
+                              disasterType={disasterType}
+                            />
+
+                            <FactorsChart
+                              factors={prediction?.factors || {}}
+                              disasterType={disasterType}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+
+                      {!prediction && !loading && !error && (
                         <Box
                           sx={{
                             backgroundColor: COLORS.card_bg,
                             border: `2px solid ${DISASTER_TYPES[disasterType].color}`,
                             borderRadius: 3,
-                            p: 3,
-                            mb: 3,
+                            p: 4,
+                            textAlign: "center",
                           }}
                         >
-                          <Typography variant="h6" fontWeight="bold" mb={2}>
-                            Prediction Results
+                          <Typography variant="h6" color="text.secondary">
+                            No prediction data available for{" "}
+                            {DISASTER_TYPES[disasterType].label.toLowerCase()}
                           </Typography>
-
-                          <Box display="flex" flexWrap="wrap" gap={2}>
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                Location
-                              </Typography>
-                              <Typography variant="body1" fontWeight="bold">
-                                {currentPrediction.metadata.location}
-                              </Typography>
-                            </Box>
-
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                Probability
-                              </Typography>
-                              <Typography
-                                variant="body1"
-                                fontWeight="bold"
-                                color={DISASTER_TYPES[disasterType].color}
-                              >
-                                {formatPercentage(
-                                  currentPrediction.probability
-                                )}
-                              </Typography>
-                            </Box>
-
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                Model Used
-                              </Typography>
-                              <Typography variant="body1" fontWeight="bold">
-                                {currentPrediction.metadata.model.toUpperCase()}
-                              </Typography>
-                            </Box>
-                          </Box>
-
-                          {/* Weather Summary */}
-                          {currentPrediction.metadata.weather_data && (
-                            <Box
-                              mt={2}
-                              pt={2}
-                              borderTop={`1px solid ${COLORS.sidebar_border}`}
-                            >
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                mb={1}
-                              >
-                                Current Weather Conditions:
-                              </Typography>
-                              <Box display="flex" flexWrap="wrap" gap={2}>
-                                {Object.entries(
-                                  getWeatherSummary(
-                                    currentPrediction.metadata.weather_data
-                                  )
-                                ).map(([key, value]) => (
-                                  <Box key={key}>
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                    >
-                                      {key.charAt(0).toUpperCase() +
-                                        key.slice(1)}
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      fontWeight="bold"
-                                    >
-                                      {value}
-                                    </Typography>
-                                  </Box>
-                                ))}
-                              </Box>
-                            </Box>
-                          )}
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            mt={1}
+                          >
+                            Enter a location and click "Predict" to get started.
+                          </Typography>
                         </Box>
-
-                        {/* Charts Grid */}
-                        <Box
-                          display="grid"
-                          gridTemplateColumns={
-                            isMobile
-                              ? "1fr"
-                              : "repeat(auto-fit, minmax(400px, 1fr))"
-                          }
-                          gap={3}
-                        >
-                          <ProbabilityGauge
-                            probability={currentPrediction.probability}
-                            disasterType={disasterType}
-                          />
-
-                          <ForecastChart
-                            forecast={currentPrediction.forecast}
-                            disasterType={disasterType}
-                          />
-
-                          <FactorsChart
-                            factors={currentPrediction.factors}
-                            disasterType={disasterType}
-                          />
-                        </Box>
-                      </Box>
-                    )}
-
-                    {!currentPrediction && !loading && !error && (
-                      <Box
-                        sx={{
-                          textAlign: "center",
-                          py: 8,
-                          color: COLORS.text,
-                        }}
-                      >
-                        <Typography variant="h6" mb={2}>
-                          No prediction data available
-                        </Typography>
-                        <Typography variant="body2">
-                          Enter a location and click predict to see{" "}
-                          {DISASTER_TYPES[disasterType].label.toLowerCase()}{" "}
-                          analysis.
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </TabPanel>
-              ))}
+                      )}
+                    </Box>
+                  </TabPanel>
+                );
+              })}
             </Box>
           </Box>
         </Container>

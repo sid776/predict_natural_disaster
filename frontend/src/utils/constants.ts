@@ -1,100 +1,62 @@
-import type { DisasterType, PredictionModel } from '../types';
-
-// Color palette matching the original app
 export const COLORS = {
-  // Disaster type colors
-  tornado: '#FFA726',      // Orange
-  earthquake: '#AB47BC',   // Purple
-  wildfire: '#FFE066',     // Yellow
-  flood: '#2ECC71',        // Green
-  guide: '#42A5F5',        // Blue
-  
-  // UI colors
-  sidebar_bg: '#F3E8FF',       // Light lavender
-  sidebar_border: '#B39DDB',   // Purple border
-  sidebar_button: '#8E24AA',   // Purple button
-  sidebar_button_text: '#FFFFFF',
-  main_bg: '#F8F9FA',          // Very light gray
-  card_bg: '#FFF9FB',          // Soft pastel
-  card_border: '#FFA726',      // Orange border for tornado
-  text: '#333A4D',             // Dark gray
-  white: '#FFFFFF',
-  
-  // Chart colors
-  success: '#4CAF50',
-  warning: '#FF9800',
-  danger: '#F44336',
-  info: '#2196F3',
-} as const;
+  main_bg: "#f5f5f5",
+  card_bg: "#ffffff",
+  sidebar_bg: "#ffffff",
+  sidebar_border: "#e0e0e0",
+  text: "#333333",
+  text_secondary: "#666666",
+  tornado: "#ff6b6b",
+  earthquake: "#4ecdc4",
+  wildfire: "#ffa726",
+  flood: "#42a5f5",
+  guide: "#9c27b0",
+  success: "#4caf50",
+  warning: "#ff9800",
+  error: "#f44336",
+};
 
-// Disaster type configuration
-export const DISASTER_TYPES: Record<DisasterType, {
-  label: string;
-  color: string;
-  description: string;
-  icon: string;
-}> = {
+export const DISASTER_TYPES = {
   tornado: {
-    label: 'Tornado',
+    label: "Tornado",
+    icon: "🌪️",
     color: COLORS.tornado,
-    description: 'Violent rotating column of air',
-    icon: '🌪️',
+    description: "Violent rotating column of air",
   },
   earthquake: {
-    label: 'Earthquake',
+    label: "Earthquake",
+    icon: "🌋",
     color: COLORS.earthquake,
-    description: 'Sudden shaking of the ground',
-    icon: '🌋',
+    description: "Sudden shaking of the ground",
   },
   wildfire: {
-    label: 'Wildfire',
+    label: "Wildfire",
+    icon: "🔥",
     color: COLORS.wildfire,
-    description: 'Uncontrolled fire in vegetation',
-    icon: '🔥',
+    description: "Uncontrolled fire in vegetation",
   },
   flood: {
-    label: 'Flood',
+    label: "Flood",
+    icon: "🌊",
     color: COLORS.flood,
-    description: 'Overflow of water onto land',
-    icon: '🌊',
+    description: "Overflow of water onto land",
   },
 };
 
-// Prediction model configuration
-export const PREDICTION_MODELS: Record<PredictionModel, {
-  label: string;
-  description: string;
-  icon: string;
-}> = {
+export const PREDICTION_MODELS = {
   quantum: {
-    label: 'Quantum AI',
-    description: 'Quantum-inspired machine learning',
-    icon: '⚛️',
+    label: "Quantum AI",
+    description: "Advanced quantum computing model",
+    color: COLORS.guide,
   },
-  lstm: {
-    label: 'LSTM (Deep Learning)',
-    description: 'Long Short-Term Memory neural networks',
-    icon: '🧠',
+  ml: {
+    label: "Machine Learning",
+    description: "Traditional ML algorithms",
+    color: COLORS.success,
   },
-  rf: {
-    label: 'Random Forest',
-    description: 'Ensemble learning method',
-    icon: '🌲',
-  },
-  xgb: {
-    label: 'XGBoost',
-    description: 'Gradient boosting framework',
-    icon: '📈',
-  },
-  svm: {
-    label: 'SVM',
-    description: 'Support Vector Machine',
-    icon: '🔧',
-  },
-  mlp: {
-    label: 'MLP/ANN',
-    description: 'Multi-layer Perceptron',
-    icon: '🕸️',
+  statistical: {
+    label: "Statistical",
+    description: "Statistical analysis model",
+    color: COLORS.warning,
   },
 };
 

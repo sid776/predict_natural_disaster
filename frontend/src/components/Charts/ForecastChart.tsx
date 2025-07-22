@@ -8,52 +8,45 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Area,
-  AreaChart,
 } from "recharts";
-import type { DisasterType, ForecastDay } from "../../types";
 import { COLORS, DISASTER_TYPES } from "../../utils/constants";
-import { formatChartDate, getTrendDirection } from "../../utils/formatters";
+import { formatDate, formatPercentage } from "../../utils/formatters";
+import type { DisasterType, ForecastDay } from "../../types";
 
 interface ForecastChartProps {
   forecast: ForecastDay[];
   disasterType: DisasterType;
-  title?: string;
 }
 
 const ForecastChart: React.FC<ForecastChartProps> = ({
   forecast,
   disasterType,
-  title,
 }) => {
-  const disasterColor = DISASTER_TYPES[disasterType].color;
-  const trendDirection = getTrendDirection(forecast);
+  const color = DISASTER_TYPES[disasterType].color;
 
   // Transform data for the chart
   const chartData = forecast.map((day) => ({
-    date: formatChartDate(day.date),
+    ...day,
     probability: day.probability * 100, // Convert to percentage
-    fullDate: day.date,
+    formattedDate: formatDate(day.date),
   }));
 
-  // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <Box
           sx={{
-            backgroundColor: COLORS.white,
-            border: `1px solid ${disasterColor}`,
-            borderRadius: 2,
-            p: 2,
-            boxShadow: 3,
+            backgroundColor: COLORS.card_bg,
+            border: `1px solid ${COLORS.sidebar_border}`,
+            borderRadius: 1,
+            p: 1,
           }}
         >
-          <Typography variant="body2" fontWeight="bold">
+          <Typography variant="body2" color={COLORS.text}>
             {label}
           </Typography>
-          <Typography variant="body2" color={disasterColor}>
-            Probability: {payload[0].value.toFixed(1)}%
+          <Typography variant="body2" color={color}>
+            Probability: {formatPercentage(payload[0].value / 100)}
           </Typography>
         </Box>
       );
@@ -63,136 +56,60 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
-        p: 3,
         backgroundColor: COLORS.card_bg,
-        border: `2px solid ${disasterColor}`,
+        border: `2px solid ${color}`,
         borderRadius: 3,
+        p: 3,
       }}
     >
-      <Typography
-        variant="h6"
-        component="h3"
-        sx={{
-          color: disasterColor,
-          fontWeight: "bold",
-          mb: 2,
-          textAlign: "center",
-        }}
-      >
-        {title || "30-Day Probability Forecast"}
+      <Typography variant="h6" fontWeight="bold" mb={2} color={COLORS.text}>
+        Forecast Timeline
       </Typography>
 
-      <Box sx={{ height: 300, width: "100%" }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={COLORS.sidebar_border}
-            />
-            <XAxis
-              dataKey="date"
-              stroke={COLORS.text}
-              fontSize={12}
-              tick={{ fill: COLORS.text }}
-            />
-            <YAxis
-              stroke={COLORS.text}
-              fontSize={12}
-              tick={{ fill: COLORS.text }}
-              domain={[0, 100]}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="probability"
-              stroke={disasterColor}
-              strokeWidth={3}
-              fill={disasterColor}
-              fillOpacity={0.3}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </Box>
-
-      {/* Trend indicator */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 1,
-          mt: 2,
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          Trend:
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color:
-              trendDirection === "increasing"
-                ? COLORS.danger
-                : trendDirection === "decreasing"
-                ? COLORS.success
-                : COLORS.warning,
-            fontWeight: "bold",
-            textTransform: "capitalize",
-          }}
-        >
-          {trendDirection}
-        </Typography>
-      </Box>
-
-      {/* Summary stats */}
-      {forecast.length > 0 && (
+      {chartData.length > 0 ? (
+        <Box sx={{ height: 300 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={COLORS.sidebar_border}
+              />
+              <XAxis
+                dataKey="formattedDate"
+                stroke={COLORS.text_secondary}
+                fontSize={12}
+              />
+              <YAxis
+                stroke={COLORS.text_secondary}
+                fontSize={12}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Line
+                type="monotone"
+                dataKey="probability"
+                stroke={color}
+                strokeWidth={3}
+                dot={{ fill: color, strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: color, strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+      ) : (
         <Box
           sx={{
+            height: 300,
             display: "flex",
-            justifyContent: "space-around",
-            mt: 2,
-            pt: 2,
-            borderTop: `1px solid ${COLORS.sidebar_border}`,
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Box textAlign="center">
-            <Typography variant="caption" color="text.secondary">
-              Average
-            </Typography>
-            <Typography variant="body2" fontWeight="bold" color={disasterColor}>
-              {(
-                (forecast.reduce((sum, day) => sum + day.probability, 0) /
-                  forecast.length) *
-                100
-              ).toFixed(1)}
-              %
-            </Typography>
-          </Box>
-          <Box textAlign="center">
-            <Typography variant="caption" color="text.secondary">
-              Max
-            </Typography>
-            <Typography variant="body2" fontWeight="bold" color={disasterColor}>
-              {(
-                Math.max(...forecast.map((day) => day.probability)) * 100
-              ).toFixed(1)}
-              %
-            </Typography>
-          </Box>
-          <Box textAlign="center">
-            <Typography variant="caption" color="text.secondary">
-              Min
-            </Typography>
-            <Typography variant="body2" fontWeight="bold" color={disasterColor}>
-              {(
-                Math.min(...forecast.map((day) => day.probability)) * 100
-              ).toFixed(1)}
-              %
-            </Typography>
-          </Box>
+          <Typography variant="body2" color={COLORS.text_secondary}>
+            No forecast data available
+          </Typography>
         </Box>
       )}
     </Paper>

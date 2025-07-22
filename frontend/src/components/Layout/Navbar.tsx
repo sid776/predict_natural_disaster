@@ -1,97 +1,31 @@
 import React from "react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Box,
-  Chip,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material";
-import { Science, Warning } from "@mui/icons-material";
+import { AppBar, Toolbar, Typography, Box } from "@mui/material";
 import { COLORS } from "../../utils/constants";
 
-interface NavbarProps {
-  title?: string;
-}
-
-const Navbar: React.FC<NavbarProps> = ({
-  title = "Quantum-Inspired Natural Disaster Prediction",
-}) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
+const Navbar: React.FC = () => {
   return (
     <AppBar
       position="static"
-      elevation={2}
       sx={{
-        background: COLORS.white,
-        color: COLORS.text,
-        borderBottom: `2px solid ${COLORS.sidebar_border}`,
+        backgroundColor: COLORS.guide,
+        borderBottom: `1px solid ${COLORS.sidebar_border}`,
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
       }}
     >
       <Toolbar>
-        <Box display="flex" alignItems="center" gap={2} flexGrow={1}>
-          <Science
+        <Box display="flex" alignItems="center" gap={2}>
+          <Typography
+            variant="h6"
+            component="div"
             sx={{
-              color: COLORS.guide,
-              fontSize: isMobile ? 28 : 32,
+              color: "#ffffff",
+              fontWeight: "bold",
+              fontSize: "1.5rem",
             }}
-          />
-          <Box>
-            <Typography
-              variant={isMobile ? "h6" : "h5"}
-              component="h1"
-              sx={{
-                color: COLORS.flood,
-                fontWeight: "bold",
-                lineHeight: 1.2,
-              }}
-            >
-              {isMobile ? "Quantum Disaster Prediction" : title}
-            </Typography>
-            <Box display="flex" gap={1} mt={0.5}>
-              <Chip
-                icon={<Science />}
-                label="Quantum AI"
-                size="small"
-                sx={{
-                  backgroundColor: COLORS.guide,
-                  color: COLORS.white,
-                  fontSize: "0.7rem",
-                }}
-              />
-              <Chip
-                icon={<Warning />}
-                label="Real-time"
-                size="small"
-                sx={{
-                  backgroundColor: COLORS.warning,
-                  color: COLORS.white,
-                  fontSize: "0.7rem",
-                }}
-              />
-            </Box>
-          </Box>
+          >
+            🌪️ Natural Disaster Predictor
+          </Typography>
         </Box>
-
-        {!isMobile && (
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="caption" color="text.secondary">
-              Powered by
-            </Typography>
-            <Chip
-              label="Qiskit + PennyLane"
-              size="small"
-              sx={{
-                backgroundColor: COLORS.earthquake,
-                color: COLORS.white,
-                fontSize: "0.7rem",
-              }}
-            />
-          </Box>
-        )}
       </Toolbar>
     </AppBar>
   );

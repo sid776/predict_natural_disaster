@@ -9,42 +9,51 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import type { DisasterType, FactorImpacts } from "../../types";
 import { COLORS, DISASTER_TYPES } from "../../utils/constants";
-import { formatFactorImpacts } from "../../utils/formatters";
+import type { DisasterType, FactorImpacts } from "../../types";
 
 interface FactorsChartProps {
   factors: FactorImpacts;
   disasterType: DisasterType;
-  title?: string;
 }
 
 const FactorsChart: React.FC<FactorsChartProps> = ({
   factors,
   disasterType,
-  title,
 }) => {
-  const disasterColor = DISASTER_TYPES[disasterType].color;
-  const formattedFactors = formatFactorImpacts(factors);
+  const color = DISASTER_TYPES[disasterType].color;
 
-  // Custom tooltip
+  // Transform factors data for the chart
+  const chartData = Object.entries(factors)
+    .filter(([, value]) => value !== undefined && value !== null)
+    .map(([key, value]) => ({
+      name: key.charAt(0).toUpperCase() + key.slice(1).replace("_", " "),
+      value: value || 0,
+      impact: value > 0 ? "positive" : value < 0 ? "negative" : "neutral",
+    }))
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)) // Sort by absolute impact
+    .slice(0, 10); // Show top 10 factors
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const factor = chartData.find((item) => item.name === label);
       return (
         <Box
           sx={{
-            backgroundColor: COLORS.white,
-            border: `1px solid ${disasterColor}`,
-            borderRadius: 2,
-            p: 2,
-            boxShadow: 3,
+            backgroundColor: COLORS.card_bg,
+            border: `1px solid ${COLORS.sidebar_border}`,
+            borderRadius: 1,
+            p: 1,
           }}
         >
-          <Typography variant="body2" fontWeight="bold">
+          <Typography variant="body2" color={COLORS.text} fontWeight="bold">
             {label}
           </Typography>
-          <Typography variant="body2" color={disasterColor}>
+          <Typography variant="body2" color={COLORS.text_secondary}>
             Impact: {payload[0].value.toFixed(1)}%
+          </Typography>
+          <Typography variant="body2" color={COLORS.text_secondary}>
+            Type: {factor?.impact}
           </Typography>
         </Box>
       );
@@ -54,115 +63,86 @@ const FactorsChart: React.FC<FactorsChartProps> = ({
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
-        p: 3,
         backgroundColor: COLORS.card_bg,
-        border: `2px solid ${disasterColor}`,
+        border: `2px solid ${color}`,
         borderRadius: 3,
+        p: 3,
       }}
     >
-      <Typography
-        variant="h6"
-        component="h3"
-        sx={{
-          color: disasterColor,
-          fontWeight: "bold",
-          mb: 2,
-          textAlign: "center",
-        }}
-      >
-        {title || "Factor Impact Analysis"}
+      <Typography variant="h6" fontWeight="bold" mb={2} color={COLORS.text}>
+        Contributing Factors
       </Typography>
 
-      <Box sx={{ height: 300, width: "100%" }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={formattedFactors}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={COLORS.sidebar_border}
-            />
-            <XAxis
-              dataKey="name"
-              stroke={COLORS.text}
-              fontSize={12}
-              tick={{ fill: COLORS.text }}
-              angle={-45}
-              textAnchor="end"
-              height={80}
-            />
-            <YAxis
-              stroke={COLORS.text}
-              fontSize={12}
-              tick={{ fill: COLORS.text }}
-              domain={[0, 100]}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="value" fill={disasterColor} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </Box>
-
-      {/* Key factors summary */}
-      {formattedFactors.length > 0 && (
-        <Box mt={2}>
-          <Typography variant="body2" color="text.secondary" mb={1}>
-            Key Factors (by impact):
+      {chartData.length > 0 ? (
+        <Box sx={{ height: 300 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} layout="horizontal">
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={COLORS.sidebar_border}
+              />
+              <XAxis
+                type="number"
+                stroke={COLORS.text_secondary}
+                fontSize={12}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                stroke={COLORS.text_secondary}
+                fontSize={12}
+                width={100}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" fill={color} radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            height: 300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Typography variant="body2" color={COLORS.text_secondary}>
+            No factor data available
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-            }}
-          >
-            {formattedFactors.slice(0, 3).map((factor, index) => (
-              <Box
-                key={factor.name}
-                sx={{
-                  backgroundColor: disasterColor,
-                  color: COLORS.white,
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: 2,
-                  fontSize: "0.75rem",
-                  fontWeight: "bold",
-                  opacity: 1 - index * 0.2,
-                }}
-              >
-                {factor.name}: {factor.formatted}
-              </Box>
-            ))}
-          </Box>
         </Box>
       )}
 
-      {/* Total impact */}
-      {formattedFactors.length > 0 && (
+      {/* Factor Summary */}
+      {chartData.length > 0 && (
         <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            mt: 2,
-            pt: 2,
-            borderTop: `1px solid ${COLORS.sidebar_border}`,
-          }}
+          mt={2}
+          p={2}
+          sx={{ backgroundColor: COLORS.sidebar_bg, borderRadius: 1 }}
         >
-          <Typography variant="body2" color="text.secondary">
-            Total Impact:{" "}
-            <Typography
-              component="span"
-              variant="body2"
-              fontWeight="bold"
-              color={disasterColor}
-            >
-              {formattedFactors
-                .reduce((sum, factor) => sum + factor.value, 0)
-                .toFixed(1)}
-              %
-            </Typography>
+          <Typography variant="body2" color={COLORS.text_secondary} mb={1}>
+            Top Factors:
           </Typography>
+          <Box display="flex" flexWrap="wrap" gap={1}>
+            {chartData.slice(0, 3).map((factor) => (
+              <Box
+                key={factor.name}
+                sx={{
+                  px: 1,
+                  py: 0.5,
+                  backgroundColor: color,
+                  color: COLORS.text,
+                  borderRadius: 1,
+                  fontSize: "0.75rem",
+                }}
+              >
+                {factor.name}
+              </Box>
+            ))}
+          </Box>
         </Box>
       )}
     </Paper>
