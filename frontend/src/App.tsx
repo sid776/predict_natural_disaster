@@ -795,6 +795,70 @@ function App() {
             </Box>
           </Box>
         </Container>
+
+        {/* Copyright Footer */}
+        <Box
+          sx={{
+            position: "relative",
+            zIndex: 1,
+            py: 3,
+            px: 2,
+            textAlign: "center",
+            borderTop: `1px solid ${COLORS.sidebar_border}`,
+            backgroundColor: "rgba(255, 255, 255, 0.02)",
+            backdropFilter: "blur(10px)",
+          }}
+        >
+          <Typography
+            variant="body2"
+            color={COLORS.text_secondary}
+            sx={{
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              letterSpacing: "0.025em",
+            }}
+          >
+            © 2025 Qurelic LLC. All rights reserved. Terms and conditions apply.
+          </Typography>
+          <Typography
+            variant="caption"
+            color={COLORS.text_muted}
+            sx={{
+              display: "block",
+              mt: 0.5,
+              fontSize: "0.75rem",
+              letterSpacing: "0.025em",
+            }}
+          >
+            Quantum-inspired Natural Disaster Prediction Platform
+          </Typography>
+          <Typography
+            variant="caption"
+            color={COLORS.text_muted}
+            sx={{
+              display: "block",
+              mt: 0.5,
+              fontSize: "0.75rem",
+              letterSpacing: "0.025em",
+            }}
+          >
+            Contact us at{" "}
+            <Box
+              component="span"
+              sx={{
+                color: COLORS.primary,
+                fontWeight: 500,
+                cursor: "pointer",
+                "&:hover": {
+                  textDecoration: "underline",
+                },
+              }}
+              onClick={() => window.open("mailto:qurelicllc@gmail.com")}
+            >
+              qurelicllc@gmail.com
+            </Box>
+          </Typography>
+        </Box>
       </Box>
     </ThemeProvider>
   );
