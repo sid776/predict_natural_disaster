@@ -1,42 +1,49 @@
 export const COLORS = {
-  // Background colors
-  main_bg: "#f0f4f8",
-  card_bg: "#ffffff",
-  sidebar_bg: "#ffffff",
-  sidebar_border: "#e2e8f0",
+  // Enterprise Background Colors
+  main_bg: "#0f172a", // Dark slate
+  card_bg: "rgba(255, 255, 255, 0.05)", // Glass effect
+  sidebar_bg: "rgba(255, 255, 255, 0.08)",
+  sidebar_border: "rgba(255, 255, 255, 0.1)",
   
-  // Text colors
-  text: "#1e293b",
-  text_secondary: "#64748b",
+  // Professional Text Colors
+  text: "#f8fafc",
+  text_secondary: "#cbd5e1",
+  text_muted: "#94a3b8",
   
-  // Disaster colors (more vibrant)
-  tornado: "#dc2626",
-  earthquake: "#059669",
-  wildfire: "#d97706",
-  flood: "#2563eb",
+  // Enterprise Disaster Colors (more sophisticated)
+  tornado: "#f97316",
+  earthquake: "#10b981", 
+  wildfire: "#f59e0b",
+  flood: "#3b82f6",
   
-  // Brand colors
-  primary: "#1e40af",
+  // IBM/Palantir-style Brand Colors
+  primary: "#1A237E", // Deep blue
   secondary: "#7c3aed",
+  accent: "#6366f1",
   
-  // Status colors
-  success: "#059669",
-  warning: "#d97706",
-  error: "#dc2626",
-  info: "#2563eb",
+  // Status Colors
+  success: "#10b981",
+  warning: "#f59e0b",
+  error: "#ef4444",
+  info: "#3b82f6",
+  
+  // Glassmorphism Colors
+  glass_bg: "rgba(255, 255, 255, 0.1)",
+  glass_border: "rgba(255, 255, 255, 0.2)",
+  glass_shadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
   
   // Additional colors
-  accent: "#f59e0b",
   highlight: "#fbbf24",
-  muted: "#94a3b8",
-  border: "#e2e8f0",
+  muted: "#64748b",
+  border: "rgba(255, 255, 255, 0.1)",
   
-  // Gradients
-  gradient_primary: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
+  // Enterprise Gradients
+  gradient_primary: "linear-gradient(135deg, #1A237E 0%, #3949ab 100%)",
   gradient_secondary: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
-  gradient_success: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-  gradient_warning: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
-  gradient_error: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)",
+  gradient_glass: "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
+  gradient_success: "linear-gradient(135deg, #10b981 0%, #34d399 100%)",
+  gradient_warning: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)",
+  gradient_error: "linear-gradient(135deg, #ef4444 0%, #f87171 100%)",
 };
 
 export const DISASTER_TYPES = {

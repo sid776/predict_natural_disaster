@@ -29,29 +29,91 @@ import type { DisasterType, PredictionModel } from "./types";
 import { COLORS, DISASTER_TYPES } from "./utils/constants";
 import { formatPercentage, getWeatherSummary } from "./utils/formatters";
 
-// Create theme
-const appTheme = createTheme({
-  palette: {
-    mode: "light",
-    primary: {
-      main: COLORS.primary,
+// Create dynamic enterprise theme
+const createAppTheme = (isDark: boolean) =>
+  createTheme({
+    palette: {
+      mode: isDark ? "dark" : "light",
+      primary: {
+        main: COLORS.primary,
+      },
+      secondary: {
+        main: COLORS.secondary,
+      },
+      background: {
+        default: isDark ? COLORS.main_bg : "#f8fafc",
+        paper: isDark ? COLORS.card_bg : "#ffffff",
+      },
+      text: {
+        primary: isDark ? COLORS.text : "#1e293b",
+        secondary: isDark ? COLORS.text_secondary : "#64748b",
+      },
     },
-    secondary: {
-      main: COLORS.secondary,
+    typography: {
+      fontFamily:
+        '"Inter", "IBM Plex Sans", "Roboto", "Helvetica", "Arial", sans-serif',
+      h1: {
+        fontWeight: 700,
+        letterSpacing: "-0.025em",
+      },
+      h2: {
+        fontWeight: 600,
+        letterSpacing: "-0.025em",
+      },
+      h3: {
+        fontWeight: 600,
+        letterSpacing: "-0.025em",
+      },
+      h4: {
+        fontWeight: 600,
+        letterSpacing: "-0.025em",
+      },
+      h5: {
+        fontWeight: 600,
+        letterSpacing: "-0.025em",
+      },
+      h6: {
+        fontWeight: 600,
+        letterSpacing: "-0.025em",
+      },
+      body1: {
+        lineHeight: 1.6,
+      },
+      body2: {
+        lineHeight: 1.6,
+      },
     },
-    background: {
-      default: COLORS.main_bg,
-      paper: COLORS.card_bg,
+    shape: {
+      borderRadius: 12,
     },
-    text: {
-      primary: COLORS.text,
-      secondary: COLORS.text_secondary,
+    components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+            backgroundColor: isDark ? COLORS.card_bg : "#ffffff",
+            backdropFilter: isDark ? "blur(10px)" : "none",
+            border: isDark
+              ? `1px solid ${COLORS.glass_border}`
+              : `1px solid #e2e8f0`,
+            boxShadow: isDark
+              ? COLORS.glass_shadow
+              : "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+          },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 25,
+            textTransform: "none",
+            fontWeight: 600,
+            letterSpacing: "0.025em",
+          },
+        },
+      },
     },
-  },
-  typography: {
-    fontFamily: '"Poppins", "Roboto", "Helvetica", "Arial", sans-serif',
-  },
-});
+  });
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -85,6 +147,7 @@ function App() {
     useState<PredictionModel>("quantum");
   const [selectedTab, setSelectedTab] = useState(0);
   const [apiHealth, setApiHealth] = useState<boolean | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Prediction hook
   const {
@@ -123,6 +186,11 @@ function App() {
     setSelectedTab(newValue);
   };
 
+  // Theme toggle handler
+  const handleThemeToggle = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   // Get current disaster type
   const disasterTypes: DisasterType[] = [
     "tornado",
@@ -130,13 +198,47 @@ function App() {
     "wildfire",
     "flood",
   ];
-  const currentDisasterType = disasterTypes[selectedTab];
 
   return (
-    <ThemeProvider theme={appTheme}>
+    <ThemeProvider theme={createAppTheme(isDarkMode)}>
       <CssBaseline />
-      <Box sx={{ backgroundColor: COLORS.main_bg, minHeight: "100vh" }}>
-        <Navbar />
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background: COLORS.main_bg,
+          position: "relative",
+          overflow: "hidden",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `
+              radial-gradient(circle at 20% 80%, rgba(26, 35, 126, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(99, 102, 241, 0.05) 0%, transparent 50%)
+            `,
+            animation: "float 20s ease-in-out infinite",
+            zIndex: 0,
+          },
+        }}
+      >
+        <style>
+          {`
+            @keyframes float {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              33% { transform: translateY(-20px) rotate(1deg); }
+              66% { transform: translateY(10px) rotate(-1deg); }
+            }
+          `}
+        </style>
+        <Navbar
+          currentSection={DISASTER_TYPES[disasterTypes[selectedTab]].label}
+          onThemeToggle={handleThemeToggle}
+          isDarkMode={isDarkMode}
+        />
 
         {/* API Health Warning */}
         {apiHealth === false && (
@@ -145,8 +247,24 @@ function App() {
           </Alert>
         )}
 
-        <Container maxWidth={false} sx={{ mt: 2 }}>
-          <Box display="flex" flexDirection={isMobile ? "column" : "row"}>
+        <Container
+          maxWidth="xl"
+          sx={{
+            position: "relative",
+            zIndex: 1,
+            py: { xs: 2, md: 4 },
+            px: { xs: 2, md: 4 },
+          }}
+        >
+          <Box
+            display="grid"
+            gridTemplateColumns={{
+              xs: "1fr",
+              md: "350px 1fr",
+            }}
+            gap={{ xs: 3, md: 4 }}
+            alignItems="start"
+          >
             {/* Sidebar */}
             <Sidebar
               location={location}
@@ -175,11 +293,11 @@ function App() {
                       minHeight: 64,
                     },
                     "& .Mui-selected": {
-                      color: DISASTER_TYPES[currentDisasterType].color,
+                      color: DISASTER_TYPES[disasterTypes[selectedTab]].color,
                     },
                     "& .MuiTabs-indicator": {
                       backgroundColor:
-                        DISASTER_TYPES[currentDisasterType].color,
+                        DISASTER_TYPES[disasterTypes[selectedTab]].color,
                       height: 3,
                     },
                   }}
@@ -197,6 +315,11 @@ function App() {
                       }
                       id={`disaster-tab-${index}`}
                       aria-controls={`disaster-tabpanel-${index}`}
+                      sx={{
+                        "&.Mui-selected": {
+                          color: DISASTER_TYPES[disasterType].color,
+                        },
+                      }}
                     />
                   ))}
                 </Tabs>
@@ -227,8 +350,64 @@ function App() {
                       </Typography>
 
                       {loading && (
-                        <Box display="flex" justifyContent="center" my={4}>
-                          <CircularProgress size={60} />
+                        <Box
+                          display="flex"
+                          flexDirection="column"
+                          alignItems="center"
+                          my={4}
+                          gap={3}
+                        >
+                          <CircularProgress
+                            size={60}
+                            sx={{
+                              color: COLORS.primary,
+                              "& .MuiCircularProgress-circle": {
+                                strokeLinecap: "round",
+                              },
+                            }}
+                          />
+                          <Box textAlign="center">
+                            <Typography variant="h6" color={COLORS.text} mb={1}>
+                              Analyzing{" "}
+                              {DISASTER_TYPES[disasterType].label.toLowerCase()}{" "}
+                              risk...
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color={COLORS.text_secondary}
+                            >
+                              Processing weather data and running AI models
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              width: "100%",
+                              maxWidth: 400,
+                              height: 4,
+                              backgroundColor: "rgba(255, 255, 255, 0.1)",
+                              borderRadius: 2,
+                              overflow: "hidden",
+                              position: "relative",
+                              "&::after": {
+                                content: '""',
+                                position: "absolute",
+                                top: 0,
+                                left: "-100%",
+                                width: "100%",
+                                height: "100%",
+                                background: `linear-gradient(90deg, transparent, ${COLORS.primary}40, transparent)`,
+                                animation: "shimmer 2s infinite",
+                              },
+                            }}
+                          />
+                          <style>
+                            {`
+                              @keyframes shimmer {
+                                0% { left: -100%; }
+                                100% { left: 100%; }
+                              }
+                            `}
+                          </style>
                         </Box>
                       )}
 
@@ -296,37 +475,69 @@ function App() {
                               </Box>
                             </Box>
 
-                            {/* Weather Summary */}
+                            {/* Weather Summary with Badges */}
                             {prediction?.metadata?.weather_data && (
                               <Box
-                                mt={2}
-                                pt={2}
-                                borderTop={`1px solid ${COLORS.sidebar_border}`}
+                                sx={{
+                                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                  borderRadius: 2,
+                                  p: 3,
+                                  mt: 2,
+                                  border: `1px solid ${COLORS.glass_border}`,
+                                }}
                               >
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                  mb={1}
+                                <Box
+                                  display="flex"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                  mb={2}
                                 >
-                                  Current Weather Conditions:
-                                </Typography>
-                                <Box display="flex" flexWrap="wrap" gap={2}>
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight="600"
+                                    color={COLORS.text}
+                                  >
+                                    Current Weather Conditions
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color={COLORS.text_secondary}
+                                    sx={{ fontStyle: "italic" }}
+                                  >
+                                    Last updated:{" "}
+                                    {new Date().toLocaleTimeString()}
+                                  </Typography>
+                                </Box>
+                                <Box display="flex" flexWrap="wrap" gap={1.5}>
                                   {Object.entries(
                                     getWeatherSummary(
                                       prediction?.metadata?.weather_data
                                     )
                                   ).map(([key, value]) => (
-                                    <Box key={key}>
+                                    <Box
+                                      key={key}
+                                      sx={{
+                                        backgroundColor:
+                                          "rgba(255, 255, 255, 0.1)",
+                                        borderRadius: 2,
+                                        px: 2,
+                                        py: 1,
+                                        border: `1px solid ${COLORS.glass_border}`,
+                                        backdropFilter: "blur(10px)",
+                                      }}
+                                    >
                                       <Typography
                                         variant="caption"
-                                        color="text.secondary"
+                                        color={COLORS.text_secondary}
+                                        sx={{ display: "block", mb: 0.5 }}
                                       >
                                         {key.charAt(0).toUpperCase() +
-                                          key.slice(1)}
+                                          key.slice(1).replace("_", " ")}
                                       </Typography>
                                       <Typography
                                         variant="body2"
                                         fontWeight="bold"
+                                        color={COLORS.text}
                                       >
                                         {value}
                                       </Typography>
@@ -340,12 +551,12 @@ function App() {
                           {/* Charts Grid */}
                           <Box
                             display="grid"
-                            gridTemplateColumns={
-                              isMobile
-                                ? "1fr"
-                                : "repeat(auto-fit, minmax(400px, 1fr))"
-                            }
-                            gap={3}
+                            gridTemplateColumns={{
+                              xs: "1fr",
+                              sm: "repeat(auto-fit, minmax(300px, 1fr))",
+                              md: "repeat(auto-fit, minmax(400px, 1fr))",
+                            }}
+                            gap={{ xs: 2, md: 3 }}
                           >
                             <ProbabilityGauge
                               probability={prediction.probability}
