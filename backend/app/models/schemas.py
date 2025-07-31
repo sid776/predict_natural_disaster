@@ -101,13 +101,6 @@ class PredictionResponse(BaseModel):
     factors: FactorImpacts
     metadata: PredictionMetadata
 
-# API response wrapper
-class ApiResponse(BaseModel):
-    data: Union[PredictionResponse, List[PredictionModel], WeatherData, Dict]
-    success: bool
-    message: Optional[str] = None
-    error: Optional[str] = None
-
 # Geocoding response
 class GeocodingResponse(BaseModel):
     lat: float
@@ -133,6 +126,45 @@ class HealthResponse(BaseModel):
     timestamp: datetime
     version: str = "1.0.0"
     services: Dict[str, str]
+
+# Weather alert models
+class WeatherAlert(BaseModel):
+    id: str
+    event: str
+    headline: str
+    description: str
+    severity: str
+    urgency: str
+    areas: str
+    effective: str
+    expires: str
+    status: str
+    message_type: str
+    category: str
+    certainty: str
+
+class WeatherAlertsResponse(BaseModel):
+    alerts: List[WeatherAlert]
+    location: str
+    coordinates: Dict[str, float]
+    timestamp: str
+
+# Data source info model
+class DataSourceInfo(BaseModel):
+    id: str
+    name: str
+    description: str
+    icon: str
+    features: List[str]
+    disaster_types: List[str]
+    api_required: bool
+
+# API response wrapper
+class ApiResponse(BaseModel):
+    data: Union[PredictionResponse, List[PredictionModel], WeatherData, Dict, List[Dict], WeatherAlertsResponse, List[DataSourceInfo]]
+    success: bool
+    message: Optional[str] = None
+    error: Optional[str] = None
 
 # Error response
 class ErrorResponse(BaseModel):

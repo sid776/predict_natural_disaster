@@ -19,6 +19,7 @@ import Sidebar from "./components/Layout/Sidebar";
 import ProbabilityGauge from "./components/Charts/ProbabilityGauge";
 import ForecastChart from "./components/Charts/ForecastChart";
 import FactorsChart from "./components/Charts/FactorsChart";
+import WeatherAlerts from "./components/WeatherAlerts";
 
 // Hooks and Services
 import { useBatchPrediction } from "./hooks/usePrediction";
@@ -195,10 +196,10 @@ function App() {
 
   // Get current disaster type
   const disasterTypes: DisasterType[] = [
-    "tornado",
     "earthquake",
-    "wildfire",
     "flood",
+    "tornado",
+    "wildfire",
   ];
 
   return (
@@ -667,6 +668,25 @@ function App() {
                                 {DATA_SOURCES[selectedDataSource]?.description}
                               </Typography>
                             </Box>
+                          </Box>
+
+                          {/* Weather Alerts Section */}
+                          <Box mb={3}>
+                            <WeatherAlerts
+                              location={
+                                prediction?.metadata?.location || location
+                              }
+                              coordinates={
+                                prediction?.metadata?.weather_data?.coord
+                                  ? {
+                                      lat: prediction.metadata.weather_data
+                                        .coord.lat,
+                                      lon: prediction.metadata.weather_data
+                                        .coord.lon,
+                                    }
+                                  : undefined
+                              }
+                            />
                           </Box>
 
                           {/* Charts Grid */}

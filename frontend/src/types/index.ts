@@ -114,4 +114,21 @@ export interface ApiError {
   message: string;
   code?: string;
   details?: any;
+}
+
+// Weather Alert Types
+export interface WeatherAlert {
+  id: string;
+  event: string;
+  headline: string;
+  description: string;
+  severity: string;
+  urgency: string;
+  areas: string;
+  effective: string;
+  expires: string;
+  status: string;
+  message_type: string;
+  category: string;
+  certainty: string;
 } 

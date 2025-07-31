@@ -4,11 +4,13 @@ from datetime import datetime
 
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, ApiResponse,
-    WeatherData, GeocodingResponse, PredictionModel, GlobalStatsData
+    WeatherData, GeocodingResponse, PredictionModel, GlobalStatsData,
+    WeatherAlert, WeatherAlertsResponse, DataSourceInfo
 )
 from app.services.prediction_service import prediction_service
 from app.services.weather_service import weather_service
 from app.services.geocoding_service import geocoding_service
+from app.services.weather_alerts_service import weather_alerts_service
 from app.utils.config import settings
 
 router = APIRouter(prefix="/api", tags=["predictions"])
@@ -113,42 +115,42 @@ async def get_data_sources() -> ApiResponse:
     """
     try:
         data_sources = [
-            {
-                "id": "openweathermap",
-                "name": "OpenWeatherMap",
-                "description": "Real-time weather data including temperature, humidity, pressure, and wind",
-                "icon": "🌤️",
-                "features": ["temperature", "humidity", "pressure", "wind_speed", "wind_direction"],
-                "disaster_types": ["tornado", "wildfire", "flood"],
-                "api_required": True
-            },
-            {
-                "id": "usgs",
-                "name": "USGS Earthquake",
-                "description": "United States Geological Survey earthquake data and historical records",
-                "icon": "🌋",
-                "features": ["magnitude", "depth", "time", "historical_data"],
-                "disaster_types": ["earthquake"],
-                "api_required": False
-            },
-            {
-                "id": "nasa_power",
-                "name": "NASA POWER",
-                "description": "NASA Prediction of Worldwide Energy Resources climate data",
-                "icon": "🛰️",
-                "features": ["temperature", "wind_speed", "precipitation", "solar_radiation"],
-                "disaster_types": ["tornado", "wildfire", "flood"],
-                "api_required": False
-            },
-            {
-                "id": "data_fusion",
-                "name": "Data Fusion",
-                "description": "Combined data from multiple sources for comprehensive analysis",
-                "icon": "🔗",
-                "features": ["all_features", "cross_validation", "enhanced_accuracy"],
-                "disaster_types": ["tornado", "earthquake", "wildfire", "flood"],
-                "api_required": True
-            }
+            DataSourceInfo(
+                id="data_fusion",
+                name="Data Fusion",
+                description="Combined data from multiple sources for comprehensive analysis",
+                icon="🔗",
+                features=["all_features", "cross_validation", "enhanced_accuracy"],
+                disaster_types=["tornado", "earthquake", "wildfire", "flood"],
+                api_required=True
+            ),
+            DataSourceInfo(
+                id="openweathermap",
+                name="OpenWeatherMap",
+                description="Real-time weather data including temperature, humidity, pressure, and wind",
+                icon="🌤️",
+                features=["temperature", "humidity", "pressure", "wind_speed", "wind_direction"],
+                disaster_types=["tornado", "wildfire", "flood"],
+                api_required=True
+            ),
+            DataSourceInfo(
+                id="usgs",
+                name="USGS Earthquake",
+                description="United States Geological Survey earthquake data and historical records",
+                icon="🌋",
+                features=["magnitude", "depth", "time", "historical_data"],
+                disaster_types=["earthquake"],
+                api_required=False
+            ),
+            DataSourceInfo(
+                id="nasa_power",
+                name="NASA POWER",
+                description="NASA Prediction of Worldwide Energy Resources climate data",
+                icon="🛰️",
+                features=["temperature", "wind_speed", "precipitation", "solar_radiation"],
+                disaster_types=["tornado", "wildfire", "flood"],
+                api_required=False
+            )
         ]
         
         return ApiResponse(
@@ -202,6 +204,85 @@ async def get_global_stats() -> ApiResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
 
+@router.get("/weather-alerts/{location}", response_model=ApiResponse)
+async def get_weather_alerts(location: str) -> ApiResponse:
+    """
+    Get weather alerts for a specific location
+    """
+    try:
+        # First geocode the location to get coordinates
+        location_info = geocoding_service.get_location_info(location)
+        
+        if not location_info:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Location not found: {location}"
+            )
+        
+        # Get weather alerts for the coordinates
+        alerts = weather_alerts_service.get_alerts_for_location(
+            location_info.lat, 
+            location_info.lon
+        )
+        
+        # Convert alerts to Pydantic models
+        alert_models = [WeatherAlert(**alert.to_dict()) for alert in alerts]
+        
+        response_data = WeatherAlertsResponse(
+            alerts=alert_models,
+            location=location,
+            coordinates={"lat": location_info.lat, "lon": location_info.lon},
+            timestamp=datetime.now().isoformat()
+        )
+        
+        return ApiResponse(
+            data=response_data,
+            success=True,
+            message=f"Found {len(alerts)} weather alerts for {location}"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get weather alerts: {str(e)}")
+
+@router.get("/weather-alerts/coordinates/{lat}/{lon}", response_model=ApiResponse)
+async def get_weather_alerts_by_coordinates(lat: float, lon: float) -> ApiResponse:
+    """
+    Get weather alerts for specific coordinates
+    """
+    try:
+        # Validate coordinates
+        if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid coordinates. Latitude must be between -90 and 90, longitude between -180 and 180."
+            )
+        
+        # Get weather alerts for the coordinates
+        alerts = weather_alerts_service.get_alerts_for_location(lat, lon)
+        
+        # Convert alerts to Pydantic models
+        alert_models = [WeatherAlert(**alert.to_dict()) for alert in alerts]
+        
+        response_data = WeatherAlertsResponse(
+            alerts=alert_models,
+            location=f"Coordinates ({lat}, {lon})",
+            coordinates={"lat": lat, "lon": lon},
+            timestamp=datetime.now().isoformat()
+        )
+        
+        return ApiResponse(
+            data=response_data,
+            success=True,
+            message=f"Found {len(alerts)} weather alerts for coordinates ({lat}, {lon})"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get weather alerts: {str(e)}")
+
 @router.get("/health", response_model=ApiResponse)
 async def health_check() -> ApiResponse:
     """
@@ -211,14 +292,16 @@ async def health_check() -> ApiResponse:
         # Test external services
         weather_ok = weather_service.test_api_connection()
         geocoding_ok = geocoding_service.test_service()
+        alerts_ok = weather_alerts_service.test_api_connection()
         
         services_status = {
             "weather_api": "healthy" if weather_ok else "unhealthy",
             "geocoding_service": "healthy" if geocoding_ok else "unhealthy",
+            "weather_alerts_api": "healthy" if alerts_ok else "unhealthy",
             "prediction_service": "healthy"
         }
         
-        overall_health = weather_ok and geocoding_ok
+        overall_health = weather_ok and geocoding_ok and alerts_ok
         
         return ApiResponse(
             data={
@@ -240,6 +323,7 @@ async def health_check() -> ApiResponse:
                 "services": {
                     "weather_api": "unknown",
                     "geocoding_service": "unknown",
+                    "weather_alerts_api": "unknown",
                     "prediction_service": "unknown"
                 }
             },

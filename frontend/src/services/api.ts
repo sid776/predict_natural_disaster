@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { BatchPredictionResponse, PredictionModel, DisasterType, DataSourceType, DataSourceInfo } from "../types";
+import type { BatchPredictionResponse, PredictionModel, DisasterType, DataSourceType, DataSourceInfo, WeatherAlert } from "../types";
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || "https://predictnaturaldisasterbackend-production.up.railway.app";
 
@@ -30,7 +30,7 @@ export const apiService = {
   ): Promise<BatchPredictionResponse> {
     try {
       // Make individual predictions for each disaster type
-      const disasterTypes: DisasterType[] = ["tornado", "earthquake", "wildfire", "flood"];
+      const disasterTypes: DisasterType[] = ["earthquake", "flood", "tornado", "wildfire"];
       const predictions: BatchPredictionResponse = {};
 
       for (const disasterType of disasterTypes) {
@@ -113,7 +113,7 @@ export const apiService = {
     dataSource: DataSourceType
   ): Promise<BatchPredictionResponse> {
     try {
-      const disasterTypes: DisasterType[] = ["tornado", "earthquake", "wildfire", "flood"];
+      const disasterTypes: DisasterType[] = ["earthquake", "flood", "tornado", "wildfire"];
       const predictions: BatchPredictionResponse = {};
 
       for (const disasterType of disasterTypes) {
@@ -141,6 +141,38 @@ export const apiService = {
       throw new Error(
         error.response?.data?.detail || "Failed to get predictions"
       );
+    }
+  },
+
+  // Get weather alerts for a location
+  async getWeatherAlerts(location: string): Promise<WeatherAlert[]> {
+    try {
+      const response = await apiClient.get(`/api/weather-alerts/${encodeURIComponent(location)}`);
+      
+      if (response.data.success && response.data.data?.alerts) {
+        return response.data.data.alerts;
+      } else {
+        return [];
+      }
+    } catch (error: any) {
+      console.error("Failed to get weather alerts:", error);
+      return [];
+    }
+  },
+
+  // Get weather alerts for coordinates
+  async getWeatherAlertsByCoordinates(lat: number, lon: number): Promise<WeatherAlert[]> {
+    try {
+      const response = await apiClient.get(`/api/weather-alerts/coordinates/${lat}/${lon}`);
+      
+      if (response.data.success && response.data.data?.alerts) {
+        return response.data.data.alerts;
+      } else {
+        return [];
+      }
+    } catch (error: any) {
+      console.error("Failed to get weather alerts:", error);
+      return [];
     }
   },
 }; 
