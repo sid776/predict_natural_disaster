@@ -18,6 +18,12 @@ class DisasterType(str, Enum):
     wildfire = "wildfire"
     flood = "flood"
 
+class DataSource(str, Enum):
+    openweathermap = "openweathermap"
+    usgs = "usgs"
+    nasa_power = "nasa_power"
+    data_fusion = "data_fusion"
+
 # Weather data models
 class WeatherMain(BaseModel):
     temp: float  # Kelvin
@@ -78,6 +84,7 @@ class PredictionRequest(BaseModel):
     location: str = Field(..., min_length=3, description="City and state (e.g., 'New York, NY')")
     model: PredictionModel = Field(default=PredictionModel.quantum, description="Prediction model to use")
     disaster_type: DisasterType = Field(..., description="Type of disaster to predict")
+    data_source: Optional[DataSource] = Field(default=DataSource.data_fusion, description="Data source to use for prediction")
 
 # Prediction metadata
 class PredictionMetadata(BaseModel):

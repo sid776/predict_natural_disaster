@@ -1,5 +1,6 @@
 export type DisasterType = "tornado" | "earthquake" | "wildfire" | "flood";
 export type PredictionModel = "quantum" | "lstm" | "rf" | "xgb" | "svm" | "mlp";
+export type DataSourceType = "openweathermap" | "usgs" | "nasa_power" | "data_fusion";
 
 // Backend Weather Data Structure
 export interface WeatherMain {
@@ -97,6 +98,16 @@ export interface BatchPredictionResponse {
   earthquake?: PredictionResponse;
   wildfire?: PredictionResponse;
   flood?: PredictionResponse;
+}
+
+export interface DataSourceInfo {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  features: string[];
+  disaster_types: DisasterType[];
+  api_required: boolean;
 }
 
 export interface ApiError {

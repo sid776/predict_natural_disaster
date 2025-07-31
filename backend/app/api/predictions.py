@@ -106,6 +106,60 @@ async def get_models() -> ApiResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get models: {str(e)}")
 
+@router.get("/data-sources", response_model=ApiResponse)
+async def get_data_sources() -> ApiResponse:
+    """
+    Get list of available data sources
+    """
+    try:
+        data_sources = [
+            {
+                "id": "openweathermap",
+                "name": "OpenWeatherMap",
+                "description": "Real-time weather data including temperature, humidity, pressure, and wind",
+                "icon": "🌤️",
+                "features": ["temperature", "humidity", "pressure", "wind_speed", "wind_direction"],
+                "disaster_types": ["tornado", "wildfire", "flood"],
+                "api_required": True
+            },
+            {
+                "id": "usgs",
+                "name": "USGS Earthquake",
+                "description": "United States Geological Survey earthquake data and historical records",
+                "icon": "🌋",
+                "features": ["magnitude", "depth", "time", "historical_data"],
+                "disaster_types": ["earthquake"],
+                "api_required": False
+            },
+            {
+                "id": "nasa_power",
+                "name": "NASA POWER",
+                "description": "NASA Prediction of Worldwide Energy Resources climate data",
+                "icon": "🛰️",
+                "features": ["temperature", "wind_speed", "precipitation", "solar_radiation"],
+                "disaster_types": ["tornado", "wildfire", "flood"],
+                "api_required": False
+            },
+            {
+                "id": "data_fusion",
+                "name": "Data Fusion",
+                "description": "Combined data from multiple sources for comprehensive analysis",
+                "icon": "🔗",
+                "features": ["all_features", "cross_validation", "enhanced_accuracy"],
+                "disaster_types": ["tornado", "earthquake", "wildfire", "flood"],
+                "api_required": True
+            }
+        ]
+        
+        return ApiResponse(
+            data=data_sources,
+            success=True,
+            message="Available data sources retrieved successfully"
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get data sources: {str(e)}")
+
 @router.get("/stats", response_model=ApiResponse)
 async def get_global_stats() -> ApiResponse:
     """

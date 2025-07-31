@@ -25,8 +25,8 @@ import { useBatchPrediction } from "./hooks/usePrediction";
 import { apiService } from "./services/api";
 
 // Types and Utils
-import type { DisasterType, PredictionModel } from "./types";
-import { COLORS, DISASTER_TYPES } from "./utils/constants";
+import type { DisasterType, PredictionModel, DataSourceType } from "./types";
+import { COLORS, DISASTER_TYPES, DATA_SOURCES } from "./utils/constants";
 import { formatPercentage, getWeatherSummary } from "./utils/formatters";
 
 // Create dynamic enterprise theme
@@ -145,6 +145,8 @@ function App() {
   const [location, setLocation] = useState("");
   const [selectedModel, setSelectedModel] =
     useState<PredictionModel>("quantum");
+  const [selectedDataSource, setSelectedDataSource] =
+    useState<DataSourceType>("data_fusion");
   const [selectedTab, setSelectedTab] = useState(0);
   const [apiHealth, setApiHealth] = useState<boolean | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -175,7 +177,7 @@ function App() {
     if (!location.trim()) return;
 
     try {
-      await predictAll(location, selectedModel);
+      await predictAll(location, selectedModel, selectedDataSource);
     } catch (err) {
       console.error("Prediction failed:", err);
     }
@@ -269,8 +271,10 @@ function App() {
             <Sidebar
               location={location}
               selectedModel={selectedModel}
+              selectedDataSource={selectedDataSource}
               onLocationChange={setLocation}
               onModelChange={setSelectedModel}
+              onDataSourceChange={setSelectedDataSource}
               onPredict={handlePredict}
               loading={loading}
               error={error}
@@ -376,7 +380,9 @@ function App() {
                               variant="body2"
                               color={COLORS.text_secondary}
                             >
-                              Processing weather data and running AI models
+                              Processing{" "}
+                              {DATA_SOURCES[selectedDataSource]?.label} data and
+                              running AI models
                             </Typography>
                           </Box>
                           <Box
@@ -473,6 +479,19 @@ function App() {
                                   {prediction?.metadata?.model?.toUpperCase()}
                                 </Typography>
                               </Box>
+
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Data Source
+                                </Typography>
+                                <Typography variant="body1" fontWeight="bold">
+                                  {DATA_SOURCES[selectedDataSource]?.label ||
+                                    "Default"}
+                                </Typography>
+                              </Box>
                             </Box>
 
                             {/* Weather Summary with Badges */}
@@ -546,6 +565,108 @@ function App() {
                                 </Box>
                               </Box>
                             )}
+
+                            {/* Data Source Information */}
+                            <Box
+                              sx={{
+                                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                borderRadius: 2,
+                                p: 3,
+                                mt: 2,
+                                border: `1px solid ${COLORS.glass_border}`,
+                              }}
+                            >
+                              <Box
+                                display="flex"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                mb={2}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  fontWeight="600"
+                                  color={COLORS.text}
+                                >
+                                  Data Source Analysis
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                  }}
+                                >
+                                  <Typography sx={{ fontSize: 20 }}>
+                                    {DATA_SOURCES[selectedDataSource]?.icon}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color={COLORS.text_secondary}
+                                  >
+                                    {DATA_SOURCES[selectedDataSource]
+                                      ?.api_required
+                                      ? "API Required"
+                                      : "Free Access"}
+                                  </Typography>
+                                </Box>
+                              </Box>
+
+                              <Box display="flex" flexWrap="wrap" gap={2}>
+                                <Box>
+                                  <Typography
+                                    variant="caption"
+                                    color={COLORS.text_secondary}
+                                  >
+                                    Source
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="bold">
+                                    {DATA_SOURCES[selectedDataSource]?.label}
+                                  </Typography>
+                                </Box>
+
+                                <Box>
+                                  <Typography
+                                    variant="caption"
+                                    color={COLORS.text_secondary}
+                                  >
+                                    Features
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="bold">
+                                    {DATA_SOURCES[selectedDataSource]?.features
+                                      ?.slice(0, 3)
+                                      .join(", ")}
+                                    {DATA_SOURCES[selectedDataSource]?.features
+                                      ?.length > 3 && "..."}
+                                  </Typography>
+                                </Box>
+
+                                <Box>
+                                  <Typography
+                                    variant="caption"
+                                    color={COLORS.text_secondary}
+                                  >
+                                    Coverage
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="bold">
+                                    {DATA_SOURCES[
+                                      selectedDataSource
+                                    ]?.disaster_types?.join(", ")}
+                                  </Typography>
+                                </Box>
+                              </Box>
+
+                              <Typography
+                                variant="caption"
+                                color={COLORS.text_secondary}
+                                sx={{
+                                  mt: 2,
+                                  display: "block",
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                {DATA_SOURCES[selectedDataSource]?.description}
+                              </Typography>
+                            </Box>
                           </Box>
 
                           {/* Charts Grid */}

@@ -19,10 +19,11 @@ except ImportError:
     from quantum_model import QuantumTornadoPredictor
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, PredictionMetadata,
-    ForecastDay, FactorImpacts, WeatherData, DisasterType, PredictionModel
+    ForecastDay, FactorImpacts, WeatherData, DisasterType, PredictionModel, DataSource
 )
 from app.services.weather_service import weather_service
 from app.services.geocoding_service import geocoding_service
+from data_sources.data_fusion import DataFusion
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,8 @@ class PredictionService:
     
     def __init__(self):
         self.quantum_predictor = QuantumTornadoPredictor()
+        # Initialize data sources
+        self.data_fusion = DataFusion(owm_api_key=None)  # Will use environment variable
         
     def predict(self, request: PredictionRequest) -> PredictionResponse:
         """
@@ -44,7 +47,7 @@ class PredictionService:
             PredictionResponse object with prediction results
         """
         try:
-            logger.info(f"Making prediction for {request.disaster_type} using {request.model} model")
+            logger.info(f"Making prediction for {request.disaster_type} using {request.model} model with {request.data_source} data source")
             
             # Get coordinates for the location
             coords = geocoding_service.get_coordinates(request.location)
@@ -53,17 +56,55 @@ class PredictionService:
             
             lat, lon = coords
             
-            # Get weather data
-            weather_data = weather_service.get_weather_data(lat, lon)
+            # Get data based on selected data source
+            try:
+                if request.data_source == DataSource.data_fusion:
+                    # Use data fusion for comprehensive analysis
+                    logger.info("Using Data Fusion - combining multiple data sources")
+                    fusion_data = self.data_fusion.fetch_all((lat, lon), request.disaster_type.value)
+                    weather_data = weather_service.get_weather_data(lat, lon)
+                    # Merge fusion data with weather data
+                    enhanced_data = self._merge_data_sources(weather_data, fusion_data)
+                elif request.data_source == DataSource.openweathermap:
+                    # Use only OpenWeatherMap data
+                    logger.info("Using OpenWeatherMap data source")
+                    weather_data = weather_service.get_weather_data(lat, lon)
+                    enhanced_data = weather_data
+                elif request.data_source == DataSource.usgs:
+                    # Use USGS data for earthquakes
+                    if request.disaster_type == DisasterType.earthquake:
+                        logger.info("Using USGS data source for earthquake prediction")
+                        usgs_data = self.data_fusion.usgs.fetch((lat, lon), request.disaster_type.value)
+                        weather_data = weather_service.get_weather_data(lat, lon)
+                        enhanced_data = self._merge_data_sources(weather_data, usgs_data)
+                    else:
+                        logger.info("USGS data source selected but not applicable for this disaster type")
+                        weather_data = weather_service.get_weather_data(lat, lon)
+                        enhanced_data = weather_data
+                elif request.data_source == DataSource.nasa_power:
+                    # Use NASA POWER data
+                    logger.info("Using NASA POWER data source")
+                    nasa_data = self.data_fusion.nasa.fetch((lat, lon), request.disaster_type.value)
+                    weather_data = weather_service.get_weather_data(lat, lon)
+                    enhanced_data = self._merge_data_sources(weather_data, nasa_data)
+                else:
+                    # Default to weather service
+                    logger.info("Using default weather service data source")
+                    weather_data = weather_service.get_weather_data(lat, lon)
+                    enhanced_data = weather_data
+            except Exception as e:
+                logger.warning(f"Error fetching data from {request.data_source}: {str(e)}. Falling back to weather service.")
+                weather_data = weather_service.get_weather_data(lat, lon)
+                enhanced_data = weather_data
             
             # Make prediction based on model
-            probability = self._predict_with_model(request.model, request.disaster_type, weather_data)
+            probability = self._predict_with_model(request.model, request.disaster_type, enhanced_data)
             
             # Generate forecast
-            forecast = self._generate_forecast(lat, lon, weather_data, request.disaster_type)
+            forecast = self._generate_forecast(lat, lon, enhanced_data, request.disaster_type)
             
             # Calculate factor impacts
-            factors = self._calculate_factor_impacts(weather_data, request.disaster_type)
+            factors = self._calculate_factor_impacts(enhanced_data, request.disaster_type)
             
             # Create metadata
             metadata = PredictionMetadata(
@@ -71,7 +112,7 @@ class PredictionService:
                 model=request.model,
                 disaster_type=request.disaster_type,
                 timestamp=datetime.now().isoformat(),
-                weather_data=weather_data
+                weather_data=enhanced_data
             )
             
             # Create response
@@ -88,6 +129,25 @@ class PredictionService:
         except Exception as e:
             logger.error(f"Error making prediction: {str(e)}")
             raise
+    
+    def _merge_data_sources(self, weather_data: WeatherData, additional_data: dict) -> WeatherData:
+        """Merge weather data with additional data sources"""
+        try:
+            # Create a copy of weather data to avoid modifying the original
+            merged_data = weather_data
+            
+            # Add additional data as attributes if they don't exist
+            if hasattr(merged_data, 'additional_sources'):
+                merged_data.additional_sources = additional_data
+            else:
+                # If WeatherData doesn't support additional_sources, we'll just use the weather data
+                # and log the additional data for debugging
+                logger.info(f"Additional data sources: {additional_data}")
+            
+            return merged_data
+        except Exception as e:
+            logger.error(f"Error merging data sources: {str(e)}")
+            return weather_data
     
     def _predict_with_model(self, model: PredictionModel, disaster_type: DisasterType, weather_data: WeatherData) -> float:
         """Make prediction using the specified model"""

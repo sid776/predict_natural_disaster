@@ -20,14 +20,16 @@ import {
   TrendingUp,
   Info,
 } from "@mui/icons-material";
-import { COLORS, PREDICTION_MODELS } from "../../utils/constants";
-import type { PredictionModel } from "../../types";
+import { COLORS, PREDICTION_MODELS, DATA_SOURCES } from "../../utils/constants";
+import type { PredictionModel, DataSourceType } from "../../types";
 
 interface SidebarProps {
   location: string;
   selectedModel: PredictionModel;
+  selectedDataSource: DataSourceType;
   onLocationChange: (location: string) => void;
   onModelChange: (model: PredictionModel) => void;
+  onDataSourceChange: (dataSource: DataSourceType) => void;
   onPredict: () => void;
   loading: boolean;
   error: string | null;
@@ -36,8 +38,10 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
   location,
   selectedModel,
+  selectedDataSource,
   onLocationChange,
   onModelChange,
+  onDataSourceChange,
   onPredict,
   loading,
   error,
@@ -168,6 +172,128 @@ const Sidebar: React.FC<SidebarProps> = ({
             ))}
           </Select>
         </FormControl>
+      </Box>
+
+      {/* Data Source Selection */}
+      <Box mb={3}>
+        <Typography variant="body2" fontWeight="600" color={COLORS.text} mb={1}>
+          Data Source
+        </Typography>
+        <FormControl fullWidth size="small">
+          <Select
+            value={selectedDataSource}
+            onChange={(e) =>
+              onDataSourceChange(e.target.value as DataSourceType)
+            }
+            sx={{
+              backgroundColor: "rgba(255, 255, 255, 0.05)",
+              border: `1px solid ${COLORS.glass_border}`,
+              borderRadius: 2,
+              "& .MuiSelect-select": {
+                color: COLORS.text,
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                border: "none",
+              },
+              "&:hover": {
+                borderColor: COLORS.primary,
+              },
+              "&.Mui-focused": {
+                borderColor: COLORS.primary,
+                boxShadow: `0 0 0 2px ${COLORS.primary}20`,
+              },
+            }}
+          >
+            {Object.entries(DATA_SOURCES).map(([key, source]) => (
+              <MenuItem key={key} value={key}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 1,
+                      backgroundColor: `${source.color}20`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 16 }}>{source.icon}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color={COLORS.text}
+                    >
+                      {source.label}
+                    </Typography>
+                    <Typography variant="caption" color={COLORS.text_secondary}>
+                      {source.description}
+                    </Typography>
+                  </Box>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      {/* Data Source Info Card */}
+      <Box
+        mb={3}
+        sx={{
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+          borderRadius: 2,
+          p: 2,
+          border: `1px solid ${COLORS.glass_border}`,
+        }}
+      >
+        <Box display="flex" alignItems="center" gap={1} mb={1}>
+          <Info sx={{ fontSize: 16, color: COLORS.accent }} />
+          <Typography variant="body2" fontWeight="600" color={COLORS.text}>
+            Selected Data Source
+          </Typography>
+        </Box>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 1.5,
+              backgroundColor: `${DATA_SOURCES[selectedDataSource].color}20`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography sx={{ fontSize: 20 }}>
+              {DATA_SOURCES[selectedDataSource].icon}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" fontWeight="bold" color={COLORS.text}>
+              {DATA_SOURCES[selectedDataSource].label}
+            </Typography>
+            <Typography variant="caption" color={COLORS.text_secondary}>
+              {DATA_SOURCES[selectedDataSource].description}
+            </Typography>
+          </Box>
+        </Box>
+        <Box mt={2}>
+          <Typography
+            variant="caption"
+            color={COLORS.text_secondary}
+            mb={1}
+            display="block"
+          >
+            Features: {DATA_SOURCES[selectedDataSource].features.join(", ")}
+          </Typography>
+          <Typography variant="caption" color={COLORS.text_secondary}>
+            Disaster Types:{" "}
+            {DATA_SOURCES[selectedDataSource].disaster_types.join(", ")}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Model Info Card */}

@@ -100,6 +100,11 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
         p: 4,
         position: "relative",
         overflow: "hidden",
+        transition: "all 0.3s ease",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: `0 12px 40px 0 rgba(31, 38, 135, 0.5), 0 0 20px ${color}40`,
+        },
         "&::before": {
           content: '""',
           position: "absolute",
@@ -107,7 +112,18 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
           left: 0,
           right: 0,
           height: "4px",
-          background: `linear-gradient(90deg, ${color} 0%, ${COLORS.accent} 100%)`,
+          background: `linear-gradient(90deg, ${color} 0%, ${COLORS.forecast_trend} 100%)`,
+        },
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `linear-gradient(45deg, transparent 30%, ${COLORS.forecast_trend}08 50%, transparent 70%)`,
+          animation: "shimmer 4s ease-in-out infinite",
+          pointerEvents: "none",
         },
       }}
     >
@@ -130,13 +146,32 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
         {/* Trend Indicator */}
         <Box display="flex" alignItems="center" gap={1}>
           {trend.direction === "up" && (
-            <TrendingUp sx={{ color: "#ef4444", fontSize: 20 }} />
+            <TrendingUp
+              sx={{
+                color: COLORS.error,
+                fontSize: 20,
+                filter: `drop-shadow(0 0 8px ${COLORS.error})`,
+                animation: "pulse 2s ease-in-out infinite",
+              }}
+            />
           )}
           {trend.direction === "down" && (
-            <TrendingDown sx={{ color: "#10b981", fontSize: 20 }} />
+            <TrendingDown
+              sx={{
+                color: COLORS.success,
+                fontSize: 20,
+                filter: `drop-shadow(0 0 8px ${COLORS.success})`,
+              }}
+            />
           )}
           {trend.direction === "flat" && (
-            <TrendingFlat sx={{ color: "#f59e0b", fontSize: 20 }} />
+            <TrendingFlat
+              sx={{
+                color: COLORS.warning,
+                fontSize: 20,
+                filter: `drop-shadow(0 0 8px ${COLORS.warning})`,
+              }}
+            />
           )}
           <Chip
             label={`${
@@ -148,25 +183,32 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
             }${trend.percentage.toFixed(1)}%`}
             size="small"
             sx={{
-              backgroundColor:
+              background:
                 trend.direction === "up"
-                  ? "rgba(239, 68, 68, 0.2)"
+                  ? COLORS.gradient_error
                   : trend.direction === "down"
-                  ? "rgba(16, 185, 129, 0.2)"
-                  : "rgba(245, 158, 11, 0.2)",
-              color:
-                trend.direction === "up"
-                  ? "#ef4444"
-                  : trend.direction === "down"
-                  ? "#10b981"
-                  : "#f59e0b",
+                  ? COLORS.gradient_success
+                  : COLORS.gradient_warning,
+              color: COLORS.text,
               border: `1px solid ${
                 trend.direction === "up"
-                  ? "rgba(239, 68, 68, 0.3)"
+                  ? COLORS.error
                   : trend.direction === "down"
-                  ? "rgba(16, 185, 129, 0.3)"
-                  : "rgba(245, 158, 11, 0.3)"
+                  ? COLORS.success
+                  : COLORS.warning
               }`,
+              fontWeight: 600,
+              textShadow: `0 0 5px ${
+                trend.direction === "up"
+                  ? COLORS.error
+                  : trend.direction === "down"
+                  ? COLORS.success
+                  : COLORS.warning
+              }`,
+              animation:
+                trend.direction === "up"
+                  ? "pulse 1.5s ease-in-out infinite"
+                  : "none",
             }}
           />
         </Box>
@@ -176,11 +218,16 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
       <Box display="flex" gap={2} mb={3}>
         <Box
           sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            background: COLORS.gradient_glass,
             borderRadius: 2,
             p: 2,
             flex: 1,
             border: `1px solid ${COLORS.glass_border}`,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: `0 8px 25px 0 rgba(31, 38, 135, 0.3)`,
+            },
           }}
         >
           <Typography variant="caption" color={COLORS.text_secondary}>
@@ -196,17 +243,30 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
         </Box>
         <Box
           sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            background: COLORS.gradient_glass,
             borderRadius: 2,
             p: 2,
             flex: 1,
-            border: `1px solid ${COLORS.glass_border}`,
+            border: `1px solid ${color}`,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: `0 8px 25px 0 rgba(31, 38, 135, 0.3), 0 0 15px ${color}40`,
+            },
           }}
         >
           <Typography variant="caption" color={COLORS.text_secondary}>
             Peak Risk
           </Typography>
-          <Typography variant="h6" fontWeight="bold" color={color}>
+          <Typography
+            variant="h6"
+            fontWeight="bold"
+            color={color}
+            sx={{
+              textShadow: `0 0 8px ${color}`,
+              animation: "pulse 2s ease-in-out infinite",
+            }}
+          >
             {formatPercentage(
               Math.max(...chartData.map((d) => d.probability)) / 100
             )}
@@ -214,11 +274,16 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
         </Box>
         <Box
           sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            background: COLORS.gradient_glass,
             borderRadius: 2,
             p: 2,
             flex: 1,
             border: `1px solid ${COLORS.glass_border}`,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: `0 8px 25px 0 rgba(31, 38, 135, 0.3)`,
+            },
           }}
         >
           <Typography variant="caption" color={COLORS.text_secondary}>
@@ -242,7 +307,12 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
                   x2="0"
                   y2="1"
                 >
-                  <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                  <stop offset="5%" stopColor={color} stopOpacity={0.4} />
+                  <stop
+                    offset="50%"
+                    stopColor={COLORS.forecast_trend}
+                    stopOpacity={0.2}
+                  />
                   <stop offset="95%" stopColor={color} stopOpacity={0.05} />
                 </linearGradient>
               </defs>
@@ -279,12 +349,14 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
                   strokeWidth: 2,
                   r: 4,
                   stroke: COLORS.card_bg,
+                  filter: `drop-shadow(0 0 4px ${color})`,
                 }}
                 activeDot={{
-                  r: 6,
+                  r: 8,
                   stroke: color,
                   strokeWidth: 3,
                   fill: COLORS.highlight,
+                  filter: `drop-shadow(0 0 8px ${color})`,
                 }}
               />
             </AreaChart>
@@ -314,6 +386,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
               height: 12,
               borderRadius: "50%",
               background: `linear-gradient(45deg, ${color}40, ${color})`,
+              boxShadow: `0 0 8px ${color}`,
             }}
           />
           <Typography variant="caption" color={COLORS.text_secondary}>
@@ -321,6 +394,21 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
           </Typography>
         </Box>
       </Box>
+
+      <style>
+        {`
+          @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+          }
+          
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}
+      </style>
     </Paper>
   );
 };

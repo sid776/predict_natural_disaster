@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { apiService } from "../services/api";
-import type { BatchPredictionResponse, PredictionModel } from "../types";
+import type { BatchPredictionResponse, PredictionModel, DataSourceType } from "../types";
 
 export const useBatchPrediction = () => {
   const [loading, setLoading] = useState(false);
@@ -8,12 +8,14 @@ export const useBatchPrediction = () => {
   const [data, setData] = useState<BatchPredictionResponse | null>(null);
 
   const predictAll = useCallback(
-    async (location: string, model: PredictionModel) => {
+    async (location: string, model: PredictionModel, dataSource?: DataSourceType) => {
       setLoading(true);
       setError(null);
 
       try {
-        const predictions = await apiService.getBatchPredictions(location, model);
+        const predictions = dataSource 
+          ? await apiService.getBatchPredictionsWithDataSource(location, model, dataSource)
+          : await apiService.getBatchPredictions(location, model);
         setData(predictions);
       } catch (err: any) {
         setError(err.message || "Failed to get predictions");

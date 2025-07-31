@@ -20,11 +20,28 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
-  // Determine risk level and color
+  // Enhanced risk level with vibrant colors and gradients
   const getRiskLevel = (prob: number) => {
-    if (prob < 0.3) return { level: "Low", color: "#10b981" };
-    if (prob < 0.6) return { level: "Medium", color: "#f59e0b" };
-    return { level: "High", color: "#ef4444" };
+    if (prob < 0.3)
+      return {
+        level: "Low",
+        color: COLORS.success,
+        gradient: COLORS.gradient_low_risk,
+        glowColor: "#00ff88",
+      };
+    if (prob < 0.6)
+      return {
+        level: "Medium",
+        color: COLORS.warning,
+        gradient: COLORS.gradient_medium_risk,
+        glowColor: "#ff8c42",
+      };
+    return {
+      level: "High",
+      color: COLORS.error,
+      gradient: COLORS.gradient_high_risk,
+      glowColor: "#ff4757",
+    };
   };
 
   const riskInfo = getRiskLevel(probability);
@@ -41,6 +58,11 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
         textAlign: "center",
         position: "relative",
         overflow: "hidden",
+        transition: "all 0.3s ease",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: `0 12px 40px 0 rgba(31, 38, 135, 0.5), 0 0 20px ${riskInfo.glowColor}40`,
+        },
         "&::before": {
           content: '""',
           position: "absolute",
@@ -48,7 +70,18 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
           left: 0,
           right: 0,
           height: "4px",
-          background: `linear-gradient(90deg, ${color} 0%, ${COLORS.accent} 100%)`,
+          background: `linear-gradient(90deg, ${color} 0%, ${riskInfo.glowColor} 100%)`,
+        },
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `linear-gradient(45deg, transparent 30%, ${riskInfo.glowColor}10 50%, transparent 70%)`,
+          animation: "shimmer 3s ease-in-out infinite",
+          pointerEvents: "none",
         },
       }}
     >
@@ -66,6 +99,19 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
       >
         {/* Background Circle */}
         <svg width={200} height={200} style={{ transform: "rotate(-90deg)" }}>
+          <defs>
+            <linearGradient
+              id={`gauge-gradient-${disasterType}`}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop offset="0%" stopColor={color} />
+              <stop offset="100%" stopColor={riskInfo.glowColor} />
+            </linearGradient>
+          </defs>
+
           <circle
             cx={100}
             cy={100}
@@ -75,22 +121,39 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
             strokeWidth={strokeWidth}
           />
 
-          {/* Progress Circle */}
+          {/* Progress Circle with Gradient */}
           <circle
             cx={100}
             cy={100}
             r={radius}
             fill="none"
-            stroke={color}
+            stroke={`url(#gauge-gradient-${disasterType})`}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={strokeDasharray}
             strokeDashoffset={strokeDashoffset}
             style={{
-              transition: "stroke-dashoffset 1s ease-in-out",
-              filter: "drop-shadow(0 0 8px rgba(239, 68, 68, 0.3))",
+              transition: "stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+              filter: `drop-shadow(0 0 12px ${riskInfo.glowColor})`,
             }}
           />
+
+          {/* Glow effect for high risk */}
+          {percentage > 60 && (
+            <circle
+              cx={100}
+              cy={100}
+              r={radius + 4}
+              fill="none"
+              stroke={riskInfo.glowColor}
+              strokeWidth="2"
+              opacity="0.6"
+              style={{
+                filter: `drop-shadow(0 0 8px ${riskInfo.glowColor})`,
+                animation: "pulse 2s ease-in-out infinite",
+              }}
+            />
+          )}
         </svg>
 
         {/* Center Content */}
@@ -111,6 +174,10 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
               fontSize: "2.5rem",
               lineHeight: 1,
               mb: 0.5,
+              textShadow: `0 0 15px ${riskInfo.glowColor}`,
+              animation:
+                percentage > 50 ? "pulse 2s ease-in-out infinite" : "none",
+              transition: "all 0.3s ease",
             }}
           >
             {percentage.toFixed(1)}%
@@ -118,7 +185,10 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
           <Typography
             variant="body2"
             color={COLORS.text_secondary}
-            sx={{ fontSize: "0.875rem" }}
+            sx={{
+              fontSize: "0.875rem",
+              textShadow: `0 0 5px ${riskInfo.glowColor}`,
+            }}
           >
             Probability
           </Typography>
@@ -140,11 +210,22 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
             width: 12,
             height: 12,
             borderRadius: "50%",
-            backgroundColor: riskInfo.color,
-            boxShadow: `0 0 8px ${riskInfo.color}40`,
+            background: riskInfo.gradient,
+            boxShadow: `0 0 12px ${riskInfo.glowColor}`,
+            animation:
+              percentage > 50 ? "pulse 2s ease-in-out infinite" : "none",
           }}
         />
-        <Typography variant="h6" fontWeight="bold" color={riskInfo.color}>
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          color={riskInfo.color}
+          sx={{
+            textShadow: `0 0 8px ${riskInfo.glowColor}`,
+            animation:
+              percentage > 60 ? "pulse 1.5s ease-in-out infinite" : "none",
+          }}
+        >
           {riskInfo.level} Risk
         </Typography>
       </Box>
@@ -200,6 +281,11 @@ const ProbabilityGauge: React.FC<ProbabilityGaugeProps> = ({
             0% { opacity: 1; }
             50% { opacity: 0.5; }
             100% { opacity: 1; }
+          }
+          
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
           }
         `}
       </style>

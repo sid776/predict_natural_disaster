@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { BatchPredictionResponse, PredictionModel, DisasterType } from "../types";
+import type { BatchPredictionResponse, PredictionModel, DisasterType, DataSourceType, DataSourceInfo } from "../types";
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || "https://predictnaturaldisasterbackend-production.up.railway.app";
 
@@ -65,13 +65,15 @@ export const apiService = {
   async getPrediction(
     location: string,
     disasterType: DisasterType,
-    model: PredictionModel
+    model: PredictionModel,
+    dataSource?: DataSourceType
   ): Promise<any> {
     try {
       const response = await apiClient.post("/api/predict", {
         location,
         model,
         disaster_type: disasterType,
+        data_source: dataSource,
       });
       
       if (response.data.success) {
@@ -83,6 +85,61 @@ export const apiService = {
       console.error(`${disasterType} prediction failed:`, error);
       throw new Error(
         error.response?.data?.detail || `Failed to get ${disasterType} prediction`
+      );
+    }
+  },
+
+  // Get available data sources
+  async getDataSources(): Promise<DataSourceInfo[]> {
+    try {
+      const response = await apiClient.get("/api/data-sources");
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error("Failed to get data sources");
+      }
+    } catch (error: any) {
+      console.error("Failed to get data sources:", error);
+      throw new Error(
+        error.response?.data?.detail || "Failed to get data sources"
+      );
+    }
+  },
+
+  // Get batch predictions with data source
+  async getBatchPredictionsWithDataSource(
+    location: string,
+    model: PredictionModel,
+    dataSource: DataSourceType
+  ): Promise<BatchPredictionResponse> {
+    try {
+      const disasterTypes: DisasterType[] = ["tornado", "earthquake", "wildfire", "flood"];
+      const predictions: BatchPredictionResponse = {};
+
+      for (const disasterType of disasterTypes) {
+        try {
+          const response = await apiClient.post("/api/predict", {
+            location,
+            model,
+            disaster_type: disasterType,
+            data_source: dataSource,
+          });
+          
+          if (response.data.success && response.data.data) {
+            console.log(`${disasterType} prediction data:`, response.data.data);
+            predictions[disasterType] = response.data.data;
+          }
+        } catch (error: any) {
+          console.error(`${disasterType} prediction failed:`, error);
+          // Continue with other disaster types even if one fails
+        }
+      }
+
+      return predictions;
+    } catch (error: any) {
+      console.error("Batch prediction failed:", error);
+      throw new Error(
+        error.response?.data?.detail || "Failed to get predictions"
       );
     }
   },
