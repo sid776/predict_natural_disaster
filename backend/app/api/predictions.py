@@ -5,12 +5,14 @@ from datetime import datetime
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, ApiResponse,
     WeatherData, GeocodingResponse, PredictionModel, GlobalStatsData,
-    WeatherAlert, WeatherAlertsResponse, DataSourceInfo
+    WeatherAlert, WeatherAlertsResponse, DataSourceInfo,
+    MultiCountyPredictionResponse
 )
 from app.services.prediction_service import prediction_service
 from app.services.weather_service import weather_service
 from app.services.geocoding_service import geocoding_service
 from app.services.weather_alerts_service import weather_alerts_service
+from app.services.multi_county_service import MultiCountyService
 from app.utils.config import settings
 
 router = APIRouter(prefix="/api", tags=["predictions"])
@@ -282,6 +284,49 @@ async def get_weather_alerts_by_coordinates(lat: float, lon: float) -> ApiRespon
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get weather alerts: {str(e)}")
+
+@router.get("/multi-county-prediction/{location}", response_model=ApiResponse)
+async def get_multi_county_prediction(
+    location: str,
+    disaster_type: str = "tornado",
+    model: str = "quantum",
+    data_source: str = "openweathermap"
+) -> ApiResponse:
+    """
+    Get disaster progression prediction for nearby counties within 5-mile radius
+    """
+    try:
+        # Initialize multi-county service
+        multi_county_service = MultiCountyService()
+        
+        # Get disaster progression prediction
+        progression = await multi_county_service.predict_disaster_progression(
+            location, disaster_type, model, data_source
+        )
+        
+        # Get evacuation recommendations
+        evacuation_recommendations = await multi_county_service.get_evacuation_recommendations(progression)
+        
+        # Create response
+        response = MultiCountyPredictionResponse(
+            center_location=location,
+            disaster_type=disaster_type,
+            progression=progression,
+            evacuation_recommendations=evacuation_recommendations,
+            timestamp=datetime.now()
+        )
+        
+        return ApiResponse(
+            data=response,
+            success=True,
+            message=f"Multi-county prediction completed for {disaster_type} in {location}"
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Multi-county prediction failed: {str(e)}")
+
 
 @router.get("/health", response_model=ApiResponse)
 async def health_check() -> ApiResponse:

@@ -149,6 +149,39 @@ class WeatherAlertsResponse(BaseModel):
     coordinates: Dict[str, float]
     timestamp: str
 
+# Multi-county prediction models
+class CountyInfo(BaseModel):
+    name: str
+    coordinates: Dict[str, float]
+    distance_miles: float
+    population: Optional[int] = None
+    area_sq_miles: Optional[float] = None
+
+
+class CountyPrediction(BaseModel):
+    county: CountyInfo
+    predicted_impact_time_hours: float
+    risk_level: str
+    probability: float
+    weather_conditions: Dict
+    evacuation_priority: str
+
+
+class DisasterProgression(BaseModel):
+    direction_degrees: float
+    speed_mph: float
+    estimated_duration_hours: float
+    affected_counties: List[CountyPrediction]
+
+
+class MultiCountyPredictionResponse(BaseModel):
+    center_location: str
+    disaster_type: str
+    progression: DisasterProgression
+    evacuation_recommendations: Dict
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+
 # Data source info model
 class DataSourceInfo(BaseModel):
     id: str
@@ -161,7 +194,7 @@ class DataSourceInfo(BaseModel):
 
 # API response wrapper
 class ApiResponse(BaseModel):
-    data: Union[PredictionResponse, List[PredictionModel], WeatherData, Dict, List[Dict], WeatherAlertsResponse, List[DataSourceInfo]]
+    data: Union[PredictionResponse, List[PredictionModel], WeatherData, Dict, List[Dict], WeatherAlertsResponse, List[DataSourceInfo], MultiCountyPredictionResponse]
     success: bool
     message: Optional[str] = None
     error: Optional[str] = None

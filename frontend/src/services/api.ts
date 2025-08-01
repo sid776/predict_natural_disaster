@@ -175,4 +175,36 @@ export const apiService = {
       return [];
     }
   },
+
+  // Get multi-county prediction
+  async getMultiCountyPrediction(
+    location: string,
+    disasterType: string,
+    model: string = "quantum",
+    dataSource: string = "openweathermap"
+  ): Promise<any> {
+    try {
+      const response = await apiClient.get(
+        `/api/multi-county-prediction/${encodeURIComponent(location)}`,
+        {
+          params: {
+            disaster_type: disasterType,
+            model,
+            data_source: dataSource,
+          },
+        }
+      );
+      
+      if (response.data.success && response.data.data) {
+        return response.data.data;
+      } else {
+        throw new Error("Failed to get multi-county prediction");
+      }
+    } catch (error: any) {
+      console.error("Failed to get multi-county prediction:", error);
+      throw new Error(
+        error.response?.data?.detail || "Failed to get multi-county prediction"
+      );
+    }
+  },
 }; 

@@ -20,6 +20,7 @@ import ProbabilityGauge from "./components/Charts/ProbabilityGauge";
 import ForecastChart from "./components/Charts/ForecastChart";
 import FactorsChart from "./components/Charts/FactorsChart";
 import WeatherAlerts from "./components/WeatherAlerts";
+import MultiCountyPrediction from "./components/MultiCountyPrediction";
 
 // Hooks and Services
 import { useBatchPrediction } from "./hooks/usePrediction";
@@ -147,7 +148,7 @@ function App() {
   const [selectedModel, setSelectedModel] =
     useState<PredictionModel>("quantum");
   const [selectedDataSource, setSelectedDataSource] =
-    useState<DataSourceType>("data_fusion");
+    useState<DataSourceType>("openweathermap");
   const [selectedTab, setSelectedTab] = useState(0);
   const [apiHealth, setApiHealth] = useState<boolean | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -712,6 +713,23 @@ function App() {
                             <FactorsChart
                               factors={prediction?.factors || {}}
                               disasterType={disasterType}
+                            />
+                          </Box>
+
+                          {/* Multi-County Prediction */}
+                          <Box mt={4}>
+                            <Typography variant="h5" fontWeight="bold" mb={3}>
+                              🗺️ Multi-County Impact Analysis
+                            </Typography>
+                            <MultiCountyPrediction
+                              location={
+                                prediction?.metadata?.location || location
+                              }
+                              disasterType={disasterType}
+                              model={
+                                prediction?.metadata?.model || selectedModel
+                              }
+                              dataSource={selectedDataSource}
                             />
                           </Box>
                         </Box>
